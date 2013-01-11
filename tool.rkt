@@ -19,6 +19,7 @@
   `(("Report Typed Racket optimizations?" .
      ,(match-lambda [(sub-report-entry s m 'typed-racket) #t]
                     [_ #f]))
+    ;; TODO only show these two when profiling info is available
     ("Report inlining optimizations?" .
      ,(match-lambda [(sub-report-entry s m 'inlining) #t]
                     [_ #f]))

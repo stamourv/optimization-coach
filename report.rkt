@@ -7,7 +7,7 @@
 (provide generate-report locality-merging)
 
 ;; profile is currently only used to refine the inlining logs
-(define (generate-report this profile)
+(define (generate-report this profile) ;; TODO take filters as inputs, so that locality-merging can stay here. means that caching has to be done here, too
   (define-values (TR-log mzc-log info-log) (generate-logs this))
   (define hot-functions (and profile (prune-profile profile)))
   (append

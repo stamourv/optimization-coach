@@ -83,6 +83,8 @@
 
        ;; We consider that a function is a loop if it gets inlined in itself
        ;; at least once.
+       ;; TODO maybe look if the name contains "loop" and if so, check if it
+       ;;   calls itself (walk body and look for the same identifier)
        (define is-a-loop?
          (or (any-self-o-o-f? log) (> (n-unrollings log) 0)))
        ;; From now on, we ignore self-out-of-fuels.
@@ -115,6 +117,7 @@
                  ;; in `g'.
                  (for/list ([site (in-list inlining-sites)])
                    ;; If at least one inlining of `f' in `g', ignore the rest.
+                   ;; TODO have the recommendation explain the bridgehead idea
                    (or (for/first ([evt (in-list site)] #:when (success? evt))
                          (list evt))
                        site))))
@@ -167,6 +170,10 @@
                          ;; Not inlined enough at that call site.
                          #:when (counts-as-a-missed-opt? (cdr site)))
                 site)))
+       ;; TODO maybe even better: is most of the callee's time spent in that
+       ;;  caller? if so, even better case for inlining. (or does it have a
+       ;;  single caller)
+
 
        (define pruned-log (apply append inlining-sites))
 
@@ -259,6 +266,9 @@
                                   (node-col  node)))
                         ", "))
                ;; only compute badness for the interesting sites
+               ;; TODO that can artificially lower badness compared to the next
+               ;;   cond clause, which will consider ALL call sites, despite
+               ;;   the fact that it provides less concrete feedback
                (group-badness (apply append (map cdr key-sites))))]
              [(counts-as-a-missed-opt? pruned-log)
               ;; Overall inlining ratio is not satisfactory.
