@@ -1,7 +1,5 @@
 #lang racket/base
 
-(require typed-racket/optimizer/logging)
-
 (provide (struct-out report-entry)
          (struct-out sub-report-entry)
          (struct-out opt-report-entry)
@@ -13,6 +11,20 @@
          (struct-out opt-log-entry)
          (struct-out missed-opt-log-entry)
          (struct-out info-log-entry))
+
+
+;; Instances of these structs are produced by TR.
+;; We use our own definitions (works, they're prefabs) instead of requiring
+;; them from TR to avoid version mismatches. (i.e. if we have a recent OC but
+;; an old TR, OC can still accept new kinds of messages, even if the old TR
+;; doesn't know about them, it just won't receive any)
+(struct log-entry (kind msg stx located-stx pos) #:prefab)
+(struct opt-log-entry log-entry () #:prefab)
+(struct missed-opt-log-entry log-entry
+        (irritants merged-irritants badness)
+        #:prefab)
+(struct info-log-entry log-entry () #:prefab)
+
 
 
 ;; Similar to the log-entry family of structs, but geared towards GUI display.
