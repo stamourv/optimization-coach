@@ -178,11 +178,13 @@
        (define pruned-log (apply append inlining-sites))
 
        (define recommendation
-         (cond [is-a-loop?
-                "Consider making this function smaller to encourage inlining."]
-               [else
-                ;; Non-recursive function -> macro
-                "Consider turning this function into a macro to force inlining."]))
+         (string-append
+          "Consider using `define/inline', `begin-encourage-inline' or "
+          (cond [is-a-loop?
+                 "making this function smaller, to encourage inlining."]
+                [else
+                 ;; Non-recursive function -> macro
+                 "turning this function into a macro to force inlining."])))
 
        ;; Produce as many log entries as necessary.
        (define (emit e) (set! produced-entries (cons e produced-entries)))
