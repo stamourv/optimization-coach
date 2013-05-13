@@ -6,6 +6,15 @@
 
 (provide generate-logs)
 
+(define (install-log-interceptors is thunk)
+  (if (null? is)
+      (thunk)
+      (match is
+        [`(,(list level tag interceptor) . ,rest)
+         (with-intercepted-logging interceptor
+           (lambda () (install-log-interceptors rest thunk))
+           level tag)])))
+
 (define (generate-logs this)
   (define file-predicate (make-file-predicate this))
   (define input          (open-input-text-editor this))
@@ -22,28 +31,27 @@
   (define TR-log   '())
   (define mzc-log  '())
   (define info-log '()) ; for hidden costs
-  (with-intercepted-logging
-      (lambda (l)
-        ;; From mzc, create a log-entry from the info.
-        (define entry (mzc-opt-log-message->log-entry (vector-ref l 1)))
-        (when (and entry (right-file? entry))
-          (set! mzc-log (cons entry mzc-log))))
-    (lambda ()
-      (with-intercepted-logging
+  (install-log-interceptors
+   (list
+    (list 'debug 'optimizer
+          (lambda (l)
+            ;; From mzc, create a log-entry from the info.
+            (define entry (mzc-opt-log-message->log-entry (vector-ref l 1)))
+            (when (and entry (right-file? entry))
+              (set! mzc-log (cons entry mzc-log)))))
+    (list 'debug 'TR-optimizer
           (lambda (l)
             ;; From TR, use the log-entry struct provided.
             (define entry (vector-ref l 2))
             (when (right-file? entry)
               (if (info-log-entry? entry)
                   (set! info-log (cons entry info-log))
-                  (set! TR-log   (cons entry TR-log)))))
-        (lambda ()
-          (run-inside-optimization-coach-sandbox
-           this
-           (lambda ()
-             (void (compile (read-syntax (send this get-port-name) input))))))
-        'debug 'TR-optimizer))
-    'debug 'optimizer)
+                  (set! TR-log   (cons entry TR-log)))))))
+   (lambda ()
+     (run-inside-optimization-coach-sandbox
+      this
+      (lambda ()
+        (void (compile (read-syntax (send this get-port-name) input)))))))
   ;; The raw TR logs may contain duplicates from the optimizer traversing
   ;; the same piece of code multiple times.
   ;; Duplicates are not significant (unlike for inlining logs) and we can
