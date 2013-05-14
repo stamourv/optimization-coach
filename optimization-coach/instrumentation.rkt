@@ -46,7 +46,17 @@
             (when (right-file? entry)
               (if (info-log-entry? entry)
                   (set! info-log (cons entry info-log))
-                  (set! TR-log   (cons entry TR-log)))))))
+                  (set! TR-log   (cons entry TR-log))))))
+    (list 'debug 'sequence-specialization
+          (lambda (l)
+            ;; build an info-log-entry out of it
+            (define clause-stx (vector-ref l 2))
+            (define entry      (info-log-entry "non-specialized for clause"
+                                               "<unused>"
+                                               clause-stx clause-stx
+                                               (syntax-position clause-stx)))
+            (when (right-file? entry)
+              (set! info-log (cons entry info-log))))))
    (lambda ()
      (run-inside-optimization-coach-sandbox
       this

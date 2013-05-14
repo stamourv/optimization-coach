@@ -27,6 +27,7 @@
   (define parameter-access-badness    (ceiling (* 20 badness-multiplier)))
   (define struct-construction-badness (ceiling (* 20 badness-multiplier)))
   (define exact-real-arith-badness    (ceiling (* 20 badness-multiplier)))
+  (define for-spec-failure-badness    (ceiling (* 20 badness-multiplier)))
 
   (define (check-hidden-cost kind message badness)
     (when inside-hot-function?
@@ -73,5 +74,13 @@
     ;; TODO don't hard-code `quotient', show the right one depending on the operation
     "results, such as `quotient', or using floating-point numbers.")
    exact-real-arith-badness)
+
+  (check-hidden-cost
+   "non-specialized for clause"
+   (string-append
+    "This `for' clause is not specialized, which introduces run-time dispatch "
+    "overhead. You can avoid this by specializing it, e.g., by wrapping it in "
+    "an `in-list', `in-range', or other sequence form.")
+   for-spec-failure-badness)
 
   produced-entries)
