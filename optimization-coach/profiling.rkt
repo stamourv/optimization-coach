@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require profile/analyzer profile/sampler racket/class racket/serialize)
+(require profile/analyzer profile/sampler racket/class racket/serialize
+         syntax/srcloc)
 
 (require "sandbox.rkt")
 
@@ -13,7 +14,7 @@
 
 (define ((mk accessor) node)
   (define src (node-src node))
-  (and src (accessor src)))
+  (and src (accessor (build-source-location src))))
 (define node-source  (mk srcloc-source))
 (define node-line    (mk srcloc-line))
 (define node-col     (mk srcloc-column))
