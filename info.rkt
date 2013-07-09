@@ -1,4 +1,8 @@
-#lang setup/infotab
+#lang info
+
+(define collection "optimization-coach")
+
+(define deps '("base" "profile-lib" "rackunit-lib"))
 
 (define scribblings '(("scribblings/optimization-coach.scrbl" () (tool))))
 
