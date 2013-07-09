@@ -1,19 +1,31 @@
 #lang racket/base
 
-(require "structs.rkt" "utils.rkt" "profiling.rkt")
+(require "structs.rkt" "utils.rkt" "profiling.rkt"
+         racket/set)
 
 (provide report-hidden-costs)
 
 (define (report-hidden-costs info-log profile hot-functions)
-  (apply
-   append
-   (for/list ([node (in-list (profile-nodes profile))])
-     (process-profile-node node hot-functions info-log
-                           (profile-total-time profile)))))
+  (define-values (report _)
+    (for/fold ([produced-entries '()]
+               [info-set         (list->set info-log)])
+        ([node (in-list (profile-nodes profile))])
+      (define-values (new-entries consumed-info)
+        (process-profile-node node hot-functions info-set
+                              (profile-total-time profile)))
+      (values (append new-entries produced-entries)
+              ;; Profile nodes can overlap (e.g. a hot function nested inside
+              ;; another). To avoid reporting hidden costs once for each level
+              ;; of nesting, consume info log entries as soon as someone reports
+              ;; about them.
+              (set-subtract info-set consumed-info))))
+  report)
 
 (define (process-profile-node profile-entry hot-functions info-log total-time)
   (define produced-entries '())
+  (define consumed-info    (set))
   (define (emit e) (set! produced-entries (cons e produced-entries)))
+  (define (consume-info i) (set! consumed-info (set-add consumed-info i)))
 
   (define inside-hot-function? (memq profile-entry hot-functions))
 
@@ -31,12 +43,13 @@
 
   (define (check-hidden-cost kind message badness)
     (when inside-hot-function?
-      (for/list ([info-entry (in-list info-log)]
+      (for/list ([info-entry (in-set info-log)]
                  #:when (info-log-entry? info-entry)
                  #:when (equal? (log-entry-kind info-entry) kind)
                  #:when (inside-us? (log-entry-pos info-entry)))
         (define start     (sub1 (log-entry-pos info-entry)))
         (define end       (+ start (syntax-span (log-entry-stx info-entry))))
+        (consume-info info-entry)
         (emit (report-entry
                (list (missed-opt-report-entry
                       (log-entry-located-stx info-entry)
@@ -83,4 +96,4 @@
     "an `in-list', `in-range', or other sequence form.")
    for-spec-failure-badness)
 
-  produced-entries)
+  (values produced-entries consumed-info))
