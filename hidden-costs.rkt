@@ -5,21 +5,34 @@
 
 (provide report-hidden-costs)
 
-(define (report-hidden-costs info-log profile hot-functions)
-  (define-values (report _)
-    (for/fold ([produced-entries '()]
-               [info-set         (list->set info-log)])
-        ([node (in-list (profile-nodes profile))])
-      (define-values (new-entries consumed-info)
-        (process-profile-node node hot-functions info-set
-                              (profile-total-time profile)))
-      (values (append new-entries produced-entries)
-              ;; Profile nodes can overlap (e.g. a hot function nested inside
-              ;; another). To avoid reporting hidden costs once for each level
-              ;; of nesting, consume info log entries as soon as someone reports
-              ;; about them.
-              (set-subtract info-set consumed-info))))
-  report)
+;; TODO implement locality merging for hidden costs.
+;;  in popup, highlight each problematic operation and merge
+;;  to do this, have TR report the operation as an irritant, and propagate it
+;;  also, have locality merging combine irritants
+
+;; When in verbose mode, show all hidden costs, even those in cold code, and
+;; even if we don't have profiling info available.
+;; If profile is #f, we are in verbose mode, and report all hidden costs.
+(define (report-hidden-costs info-log* profile hot-functions)
+  (define info-log (filter info-log-entry? info-log*))
+  (cond
+   [profile
+    (define-values (report _)
+      (for/fold ([produced-entries '()]
+                 [info-set         (list->set info-log)])
+          ([node (in-list (profile-nodes profile))])
+        (define-values (new-entries consumed-info)
+          (process-profile-node node hot-functions info-set
+                                (profile-total-time profile)))
+        (values (append new-entries produced-entries)
+                ;; Profile nodes can overlap (e.g. a hot function nested
+                ;; inside another). To avoid reporting hidden costs once for
+                ;; each level of nesting, consume info log entries as soon as
+                ;; someone reports about them.
+                (set-subtract info-set consumed-info))))
+    report]
+   [else ; verbose mode, report everything
+    (map log-entry->report info-log)]))
 
 (define (process-profile-node profile-entry hot-functions info-log total-time)
   (define produced-entries '())
@@ -36,7 +49,6 @@
 
   (when inside-hot-function?
     (for/list ([info-entry (in-set info-log)]
-               #:when (info-log-entry? info-entry)
                #:when (inside-us? (log-entry-pos info-entry)))
       (consume-info info-entry)
       (emit (log-entry->report info-entry badness-multiplier))))
@@ -89,7 +101,8 @@
 
 ;; Converts an info log entry to a hidden cost report.
 ;; Optionally takes a badness multiplier, based on profiling information.
-(define (log-entry->report info-entry [badness-multiplier 1])
+;; Default multiplier brings hidden costs to the same badness as other reports.
+(define (log-entry->report info-entry [badness-multiplier 1/20])
   (match-define `(,message ,base-badness)
     (dict-ref hidden-cost-corpus (log-entry-kind info-entry)))
   (define badness   (ceiling (* base-badness badness-multiplier)))

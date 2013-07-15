@@ -62,3 +62,10 @@ In addition, Optimization Coach's post-profiling recommendations are more
 aggressive. For example, it may recommend replacing convenient, high-level
 constructs---such as structs--with more performant but lower-level ones---such
 as vectors.
+
+@section{Verbose Mode}
+
+Optimization Coach provides a @emph{verbose} mode, which is enabled by clicking
+the @bold{Show More} button. In verbose mode, reports that would only be
+displayed for hot functions are displayed for all functions instead. No
+profiling information is required to enable verbose mode.

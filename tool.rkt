@@ -148,11 +148,14 @@
       ;; profile is either a list of analyzed profile nodes (in which case we
       ;; use it to refine the report) or #f. Profile information causes the
       ;; report to be recomputed, invalidating the cache.
-      (define/public (add-highlights #:source  [source  #f]
-                                     #:profile [profile #f])
+      ;; in verbose mode, show more reports, even in cold code, or without
+      ;; profiling info
+      (define/public (add-highlights #:source   [source   #f]
+                                     #:profile  [profile  #f]
+                                     #:verbose? [verbose? #f])
         (clear-highlights)
         (unless (and report-cache (not source) (not profile))
-          (set! report-cache (generate-report source profile)))
+          (set! report-cache (generate-report source profile verbose?)))
         (define report
           (locality-merging
            (for/list ([entry (in-list report-cache)]
@@ -284,6 +287,10 @@
              [parent check-box-panel]
              [callback (lambda _ (close-optimization-coach))])
         (new button%
+             [label "Show More"]
+             [parent profile-panel]
+             [callback (lambda _ (launch-optimization-coach #:verbose? #t))])
+        (new button%
              [label "Refine"]
              [parent profile-panel]
              [callback (lambda _ (launch-profile))])
@@ -377,12 +384,13 @@
              (send this update-running #f))))
 
       ;; entry point
-      (define/public (launch-optimization-coach)
+      (define/public (launch-optimization-coach #:verbose? [verbose? #f])
         (launch-operation
          (lambda (definitions-copy)
            (show-optimization-coach)
            (send (get-definitions-text) add-highlights
-                 #:source definitions-copy))))
+                 #:source definitions-copy
+                 #:verbose? verbose?))))
 
       (define/public (launch-profile)
         (launch-operation
