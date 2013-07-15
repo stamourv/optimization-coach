@@ -6,8 +6,8 @@
 @title{Optimization Coach}
 @author{@author+email["Vincent St-Amour" "stamourv@racket-lang.org"]}
 
-This package provides optimization coaching support to help you get the
-most of the Racket and Typed Racket optimizers.
+This package provides @deftech{optimization coaching} support to help you get
+the most of the Racket and Typed Racket optimizers.
 
 The Optimization Coach DrRacket plugin can be used when editing a Typed Racket
 program in DrRacket. Clicking the @bold{Optimization Coach} button runs the
