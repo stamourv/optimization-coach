@@ -56,8 +56,9 @@
 
 
 ;; Process the inlining logs corresponding to a single function.
+;; `profile' and `hot-functions' can be #f in verbose mode.
 (define (process-function log profile hot-functions)
-  (define total-time (profile-total-time profile))
+  (define total-time (and profile (profile-total-time profile)))
   (define produced-entries '())
   (let/ec escape
     ;; prune this entry from the logs, but return what we produced so far
@@ -68,12 +69,13 @@
        ;; #f if no profiling info is available for this function
        ;; takes in either a single pos number or a pair of numbers (line col)
        (define (pos->node pos)
-         (for/first ([p (in-list (profile-nodes profile))]
-                     #:when (if (pair? pos)
-                                (and (equal? (car pos) (node-line p))
-                                     (equal? (cdr pos) (node-col  p)))
-                                (equal? pos (node-pos p))))
-           p))
+         (and profile
+              (for/first ([p (in-list (profile-nodes profile))]
+                          #:when (if (pair? pos)
+                                     (and (equal? (car pos) (node-line p))
+                                          (equal? (cdr pos) (node-col  p)))
+                                     (equal? pos (node-pos p))))
+                p)))
        (define profile-entry (pos->node pos))
 
        (define badness-multiplier
@@ -214,7 +216,7 @@
                 0)))
 
        (define inside-hot-function?
-         (memq profile-entry hot-functions))
+         (and hot-functions (memq profile-entry hot-functions)))
 
        (define (inside-us? h)
          (pos-inside-us? (node-pos h)
@@ -236,7 +238,8 @@
        ;; Prune reports about cold regions.
        ;; We don't want to prune earlier, since traversing cold functions can
        ;; give us advice about hot functions.
-       (when (and (not inside-hot-function?)
+       (when (and profile hot-functions
+                  (not inside-hot-function?)
                   (not really-hot-anonymous-function-inside-us?)
                   ;; Cold successes are useful information.
                   (counts-as-a-missed-opt? pruned-log))

@@ -16,13 +16,9 @@
     (report-hidden-costs info-log profile hot-functions))
   (append
    (report-typed-racket TR-log profile hot-functions)
-   (if profile
-       ;; inlining and hidden cost reports have too low a SNR to be shown
-       ;; w/o profiling-based pruning
+   ;; in verbose mode, show hidden costs and inlining reports no matter what
+   ;; otherwise, these have too low a SNR to be worth showing
+   (if (or verbose? profile)
        (append (report-inlining mzc-log profile hot-functions)
                (gen-hidden-costs))
-       '())
-   ;; in verbose mode, show hidden costs no matter what
-   (if (and verbose? (not profile))
-       (gen-hidden-costs)
        '())))
