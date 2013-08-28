@@ -2,7 +2,7 @@
 
 ;;;; Processing of mzc inliner logs.
 
-(require racket/match racket/list racket/string unstable/list
+(require racket/match racket/list racket/string unstable/list racket/math
          "structs.rkt" "utils.rkt" "instrumentation.rkt" "profiling.rkt")
 
 (provide report-inlining)
@@ -204,7 +204,8 @@
                        badness
                        '())) ; no irritants to highlight
                 start end
-                badness)))
+                ;; badness must be an exact integer
+                (exact-round (* badness-multiplier badness)))))
        (define (emit-success)
          (emit (report-entry
                 (list (opt-report-entry
