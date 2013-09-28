@@ -2,14 +2,14 @@
 
 ;;;; Processing of mzc inliner logs.
 
-(require racket/match racket/list racket/string unstable/list racket/math
+(require racket/match racket/list racket/string racket/math
          "structs.rkt" "utils.rkt" "instrumentation.rkt" "profiling.rkt")
 
 (provide report-inlining)
 
 (define (report-inlining log profile hot-functions)
   (define grouped-events
-    (group-by equal? #:key log-entry-pos log)) ; right file, so that's enough
+    (group-by log-entry-pos log)) ; right file, so that's enough
   (apply
    append
    (for/list ([group (in-list grouped-events)])
@@ -93,9 +93,9 @@
        (set! log (filter (lambda (l) (not (self-out-of-fuel? l))) log))
 
        (define inlining-sites
-         (group-by equal? #:key (lambda (x)
-                                  (inlining-event-where-loc
-                                   (inliner-log-entry-inlining-event x)))
+         (group-by (lambda (x)
+                     (inlining-event-where-loc
+                      (inliner-log-entry-inlining-event x)))
                    log))
 
        ;; We treat loops specially, mostly to avoid spurious reports.
