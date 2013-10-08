@@ -22,13 +22,12 @@
   (define file-predicate (make-file-predicate port-name))
   (port-count-lines! input)
   (define (right-file? l) ; does the log-entry refer to the file we're in?
-    (define stx (log-entry-stx l))
-    (define path
-      (let ([dir  (syntax-source-directory stx)]
-            [file (syntax-source-file-name stx)])
-        (if (and dir file)
-            (build-path dir file)
-            #f)))
+    (define stx  (log-entry-stx l))
+    (define dir  (syntax-source-directory stx))
+    (define file (syntax-source-file-name stx))
+    (define path (if (and dir file)
+                     (build-path dir file)
+                     #f))
     (file-predicate path))
   (define TR-log   '())
   (define mzc-log  '())
