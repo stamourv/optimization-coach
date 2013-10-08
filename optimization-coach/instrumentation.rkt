@@ -1,10 +1,13 @@
 #lang racket/base
 
-(require racket/class racket/gui/base racket/string racket/match racket/list
+(require racket/string racket/match racket/list racket/contract
          unstable/syntax unstable/logging
          "structs.rkt" "sandbox.rkt")
 
-(provide generate-logs)
+(provide/contract
+ [generate-logs (input-port? port-name? . -> . (values (listof log-entry?)
+                                                       (listof log-entry?)
+                                                       (listof log-entry?)))])
 
 (define (install-log-interceptors is thunk)
   (if (null? is)
@@ -15,9 +18,8 @@
            (lambda () (install-log-interceptors rest thunk))
            level tag)])))
 
-(define (generate-logs this)
-  (define file-predicate (make-file-predicate this))
-  (define input          (open-input-text-editor this))
+(define (generate-logs input port-name)
+  (define file-predicate (make-file-predicate port-name))
   (port-count-lines! input)
   (define (right-file? l) ; does the log-entry refer to the file we're in?
     (define stx (log-entry-stx l))
@@ -59,9 +61,9 @@
               (set! info-log (cons entry info-log))))))
    (lambda ()
      (run-inside-optimization-coach-sandbox
-      this
+      port-name
       (lambda ()
-        (void (compile (read-syntax (send this get-port-name) input)))))))
+        (void (compile (read-syntax port-name input)))))))
   ;; The raw TR logs may contain duplicates from the optimizer traversing
   ;; the same piece of code multiple times.
   ;; Duplicates are not significant (unlike for inlining logs) and we can

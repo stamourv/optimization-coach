@@ -1,9 +1,15 @@
 #lang racket/base
 
-(require racket/sandbox racket/port racket/class)
+(require racket/sandbox racket/port racket/class racket/contract racket/path)
 
-(provide run-inside-optimization-coach-sandbox
-         make-file-predicate)
+(define port-name? (or/c path-string? symbol? #f)) ; value from get-port-name
+(provide port-name?)
+
+(provide/contract
+ [run-inside-optimization-coach-sandbox
+  (port-name? (-> any) . -> . any)]
+ [make-file-predicate
+  (port-name? . -> . ((or/c path-string? #f) . -> . any/c))])
 
 (define (log-output in done-chan)
   (let loop ()
@@ -16,10 +22,9 @@
                      (format "Optimization Coach Program Output: ~a" line))
                     (loop)]))))))
 
-(define (run-inside-optimization-coach-sandbox this thunk)
+(define (run-inside-optimization-coach-sandbox port-name thunk)
   (call-with-trusted-sandbox-configuration
    (lambda ()
-     (define port-name  (send this get-port-name))
      ;; If the sandboxed program produces any output, log it as `warning'.
      ;; Mimics what check-syntax does.
      (define log-output? (log-level? (current-logger) 'warning))
@@ -46,25 +51,22 @@
 
 ;; Returns a predicate that, given a path, returns whether it corresponds
 ;; to the right file.
-(define (make-file-predicate this)
-  (define portname (send this get-port-name))
+;; Note: this used to call `port-name-matches?', which needs an editor.
+;;  Refactored to avoid passing editors this far down. Hopefully that
+;;  refactoring didn't change semantics. Keep an eye out for that.
+(define (make-file-predicate port-name)
   (define unsaved-file?
-    (and (symbol? portname)
-         (regexp-match #rx"^unsaved-editor" (symbol->string portname))))
-  (define good-portname-cache #f)
-  (lambda (path) ; (or/c path? #f)
-    (cond [(and good-portname-cache ; cache is populated
-                (equal? path good-portname-cache))
-           #t]
-          [good-portname-cache ; cache is populated, but we have the wrong file
-           #f]
-          [unsaved-file?
-           ;; we assume that any log entry without a filename comes from
-           ;; the unsaved editor
-           (not path)]
-          ;; no cache, ask directly
-          [(send this port-name-matches? path)
-           (set! good-portname-cache path) ; populate cache
-           #t]
-          [else ; different file
-           #f])))
+    (and (symbol? port-name)
+         (regexp-match #rx"^unsaved-editor" (symbol->string port-name))))
+  (if unsaved-file?
+      (lambda (path) ; (or/c path-string? #f)
+        ;; we assume that any log entry without a filename comes from the
+        ;; unsaved editor
+        (not path))
+      (lambda (path) ; (or/c path-string? #f)
+        (and path ; need to know where it's from
+             (path-string? port-name) ; needs to be backed by a file
+             ;; from `port-name-matches?'
+             (or (equal? path port-name) ; "fast path" check
+                 (equal? (normal-case-path (normalize-path port-name))
+                         (normal-case-path (normalize-path path))))))))

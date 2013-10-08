@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require "instrumentation.rkt" "profiling.rkt"
+(require racket/gui/base racket/class
+         "instrumentation.rkt" "profiling.rkt"
          "typed-racket.rkt" "inlining.rkt" "hidden-costs.rkt"
          "locality-merging.rkt")
 
@@ -10,7 +11,8 @@
 (define (generate-report this profile verbose?)
   ;; TODO take filters as inputs, so that locality-merging can stay here.
   ;;   means that caching has to be done here, too
-  (define-values (TR-log mzc-log info-log) (generate-logs this))
+  (define-values (TR-log mzc-log info-log)
+    (generate-logs (open-input-text-editor this) (send this get-port-name)))
   (define hot-functions (and profile (prune-profile profile)))
   (define (gen-hidden-costs)
     (report-hidden-costs info-log profile hot-functions))
