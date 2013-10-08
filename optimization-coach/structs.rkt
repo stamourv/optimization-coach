@@ -33,12 +33,14 @@
 ;;   between start and end
 ;; - badness is 0 for a report-entry containing only optimizations
 ;;   otherwise, it's the sum for all the subs
-(struct report-entry (subs start end badness))
+(struct report-entry (subs start end badness) #:transparent)
 ;; multiple of these can be contained in a report-entry
 ;; provenance is one of: 'typed-racket 'mzc
-(struct sub-report-entry (stx msg provenance))
-(struct opt-report-entry        sub-report-entry ())
-(struct missed-opt-report-entry sub-report-entry (badness irritants))
+(struct sub-report-entry (stx msg provenance) #:transparent)
+(struct opt-report-entry        sub-report-entry ()
+        #:transparent)
+(struct missed-opt-report-entry sub-report-entry (badness irritants)
+        #:transparent)
 
 
 (struct inliner-log-entry log-entry (inlining-event) #:prefab)

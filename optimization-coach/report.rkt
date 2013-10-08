@@ -27,3 +27,13 @@
        (append (report-inlining mzc-log profile hot-functions)
                (gen-hidden-costs))
        '())))
+
+(module+ main
+  ;; TODO have this be a raco tool at some point
+  (require racket/cmdline racket/pretty)
+  ;; TODO have flags for profile file, verbosity, etc.
+  (define filename (command-line #:args (filename) filename))
+  (for ([x (generate-report (open-input-file filename) filename #f #f)])
+    (pretty-print x)
+    (newline))
+  )
