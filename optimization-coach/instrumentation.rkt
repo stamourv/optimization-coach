@@ -2,7 +2,7 @@
 
 (require racket/string racket/match racket/list racket/contract
          unstable/syntax unstable/logging
-         "structs.rkt" "sandbox.rkt")
+         "structs.rkt" "sandbox.rkt" "utils.rkt")
 
 (provide/contract
  [generate-logs (input-port? port-name? . -> . (values (listof log-entry?)

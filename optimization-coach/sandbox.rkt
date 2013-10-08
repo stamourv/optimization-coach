@@ -1,9 +1,7 @@
 #lang racket/base
 
-(require racket/sandbox racket/port racket/class racket/contract racket/path)
-
-(define port-name? (or/c path-string? symbol? #f)) ; value from get-port-name
-(provide port-name?)
+(require racket/sandbox racket/port racket/contract racket/path
+         "utils.rkt")
 
 (provide/contract
  [run-inside-optimization-coach-sandbox

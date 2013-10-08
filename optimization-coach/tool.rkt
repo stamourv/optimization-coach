@@ -155,7 +155,10 @@
                                      #:verbose? [verbose? #f])
         (clear-highlights)
         (unless (and report-cache (not source) (not profile))
-          (set! report-cache (generate-report source profile verbose?)))
+          (set! report-cache (generate-report (open-input-text-editor source)
+                                              (send source get-port-name)
+                                              profile
+                                              verbose?)))
         (define report
           (locality-merging
            (for/list ([entry (in-list report-cache)]

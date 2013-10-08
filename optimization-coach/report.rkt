@@ -1,18 +1,21 @@
 #lang racket/base
 
-(require racket/gui/base racket/class
-         "instrumentation.rkt" "profiling.rkt"
+(require racket/contract (only-in profile/analyzer profile?)
+         "instrumentation.rkt" "profiling.rkt" "utils.rkt"
          "typed-racket.rkt" "inlining.rkt" "hidden-costs.rkt"
-         "locality-merging.rkt")
+         "locality-merging.rkt" "structs.rkt")
 
-(provide generate-report locality-merging)
+(provide/contract
+ [generate-report (input-port? port-name? (or/c profile? #f) any/c
+                               . -> . (listof report-entry?))])
+
+(provide locality-merging)
 
 ;; profile is currently only used to refine the inlining logs
-(define (generate-report this profile verbose?)
+(define (generate-report input port-name profile verbose?)
   ;; TODO take filters as inputs, so that locality-merging can stay here.
   ;;   means that caching has to be done here, too
-  (define-values (TR-log mzc-log info-log)
-    (generate-logs (open-input-text-editor this) (send this get-port-name)))
+  (define-values (TR-log mzc-log info-log) (generate-logs input port-name))
   (define hot-functions (and profile (prune-profile profile)))
   (define (gen-hidden-costs)
     (report-hidden-costs info-log profile hot-functions))

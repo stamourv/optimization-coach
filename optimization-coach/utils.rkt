@@ -1,5 +1,7 @@
 #lang racket/base
 
+(require racket/contract)
+
 (provide (all-defined-out))
 
 (define (pos-inside-us? pos our-pos our-span)
@@ -29,3 +31,5 @@
             [else ; keep going
              (loop (cdr classes)
                    (cons (car classes) rev-classes))]))))
+
+(define port-name? (or/c path-string? symbol? #f)) ; value from get-port-name

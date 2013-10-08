@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require profile/analyzer profile/sampler racket/class racket/serialize
-         syntax/srcloc)
+(require profile/analyzer profile/sampler racket/serialize syntax/srcloc)
 
 (require "sandbox.rkt")
 
