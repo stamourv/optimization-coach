@@ -35,7 +35,7 @@
 ;;   otherwise, it's the sum for all the subs
 (struct report-entry (subs start end badness) #:transparent)
 ;; multiple of these can be contained in a report-entry
-;; provenance is one of: 'typed-racket 'mzc
+;; provenance is one of: 'typed-racket 'mzc 'hidden-cost
 (struct sub-report-entry (stx msg provenance) #:transparent)
 (struct opt-report-entry        sub-report-entry ()
         #:transparent)
