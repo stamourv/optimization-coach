@@ -160,12 +160,7 @@
                                               profile
                                               verbose?)))
         (define report
-          (locality-merging
-           (for/list ([entry (in-list report-cache)]
-                      ;; At this point, report enties have a single sub.
-                      #:when (for/or ([f (in-list filters)])
-                               (f (first (report-entry-subs entry)))))
-             entry)))
+          (finalize-report report-cache filters))
         (define max-badness
           (apply max (cons 0 (map report-entry-badness report))))
         (unless (= max-badness 0) ; no missed opts, color table code would error
