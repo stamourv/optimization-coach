@@ -39,10 +39,11 @@
       #:once-each ["-v" "Verbose mode." (set! verbose-mode #t)]
       #:args (filename)
       filename)))
-  (for ([x (generate-report (open-input-file filename)
-                            filename
-                            #f
-                            verbose-mode)])
+  (for ([x (locality-merging
+            (generate-report (open-input-file filename)
+                             filename
+                             #f
+                             verbose-mode))])
     (pretty-print x)
     (newline))
   )
