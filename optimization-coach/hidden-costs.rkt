@@ -1,9 +1,10 @@
 #lang racket/base
 
 (require "structs.rkt" "utils.rkt" "profiling.rkt"
-         racket/set racket/dict racket/match)
+         racket/set racket/dict racket/match racket/list)
 
-(provide report-hidden-costs)
+(provide report-hidden-costs
+         sequence-specialization-hidden-cost-report?)
 
 ;; TODO implement locality merging for hidden costs.
 ;;  in popup, highlight each problematic operation and merge
@@ -91,13 +92,25 @@
   "results, such as `quotient', or using floating-point numbers.")
  20)
 
+(define sequence-specialization-hidden-cost-msg
+  (string-append
+   "This `for' clause is not specialized, which introduces run-time dispatch "
+   "overhead. You can avoid this by specializing it, e.g., by wrapping it in "
+   "an `in-list', `in-range', or other sequence form."))
 (define-hidden-cost
  "non-specialized for clause"
- (string-append
-  "This `for' clause is not specialized, which introduces run-time dispatch "
-  "overhead. You can avoid this by specializing it, e.g., by wrapping it in "
-  "an `in-list', `in-range', or other sequence form.")
+ sequence-specialization-hidden-cost-msg
  20)
+
+(define (sequence-specialization-hidden-cost-report? report)
+  (define subs (report-entry-subs report))
+  (when (> (length subs) 1)
+    (error "got report with > 1 subs" report))
+  (define sub (first subs))
+  (and (equal? (sub-report-entry-provenance sub)
+               'hidden-cost)
+       (equal? (sub-report-entry-msg sub)
+               sequence-specialization-hidden-cost-msg)))
 
 ;; Converts an info log entry to a hidden cost report.
 ;; Optionally takes a badness multiplier, based on profiling information.
