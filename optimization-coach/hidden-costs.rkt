@@ -3,8 +3,7 @@
 (require "structs.rkt" "utils.rkt" "profiling.rkt"
          racket/set racket/dict racket/match racket/list)
 
-(provide report-hidden-costs
-         sequence-specialization-hidden-cost-report?)
+(provide report-hidden-costs)
 
 ;; TODO implement locality merging for hidden costs.
 ;;  in popup, highlight each problematic operation and merge
@@ -102,16 +101,6 @@
  sequence-specialization-hidden-cost-msg
  20)
 
-(define (sequence-specialization-hidden-cost-report? report)
-  (define subs (report-entry-subs report))
-  (when (> (length subs) 1)
-    (error "got report with > 1 subs" report))
-  (define sub (first subs))
-  (and (equal? (sub-report-entry-provenance sub)
-               'hidden-cost)
-       (equal? (sub-report-entry-msg sub)
-               sequence-specialization-hidden-cost-msg)))
-
 ;; Converts an info log entry to a hidden cost report.
 ;; Optionally takes a badness multiplier, based on profiling information.
 ;; Default multiplier brings hidden costs to the same badness as other reports.
@@ -121,12 +110,12 @@
   (define badness   (ceiling (* base-badness badness-multiplier)))
   (define start     (sub1 (log-entry-pos info-entry)))
   (define end       (+ start (syntax-span (log-entry-stx info-entry))))
-  (report-entry
-   (list (missed-opt-report-entry
-          (log-entry-located-stx info-entry)
-          message
-          'hidden-cost
-          badness
-          '())) ; no irritants to highlight
-   start end
-   badness))
+  (near-miss-report-entry
+   (log-entry-kind info-entry)
+   message
+   (log-entry-located-stx info-entry)
+   'hidden-cost
+   start
+   end
+   badness
+   '())) ; no irritants to highlight

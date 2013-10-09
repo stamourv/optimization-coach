@@ -15,21 +15,21 @@
 (send tt-style-delta set-family 'modern)
 
 (define ((popup-callback entry) ed start end)
-  (match-define (report-entry subs start end badness) entry)
+  (match-define (display-entry subs start end) entry)
   (define win (new frame% [label "Optimization Coach"]
                    [width popup-width] [height popup-height]))
   (define pane (new text% [auto-wrap #t]))
   (define canvas
     (new editor-canvas% [parent win] [editor pane] [style '(no-hscroll)]))
-  (for-each (format-sub-report-entry pane) subs)
+  (for-each (format-sub-display-entry pane) subs)
   (send canvas scroll-to 0 0 0 0 #t) ; display the beginning
   (send pane lock #t)
   (send win show #t))
 
 ;; each sub-entry is displayed in its own text%, contained in the main
 ;; editor, to simplify irritant highlighting
-(define ((format-sub-report-entry pane) s)
-  (match-define (sub-report-entry stx msg provenance) s)
+(define ((format-sub-display-entry pane) s)
+  (match-define (sub-display-entry stx msg) s)
 
   (define usable-width (- popup-width 20)) ; minus the scrollbar
 
@@ -49,8 +49,8 @@
   (send syntax-text insert-port
         (open-input-string (syntax->string #`(#,stx)))) ; takes a list of stxs
   ;; circle irritants, if necessary
-  (when (missed-opt-report-entry? s)
-    (for ([i (in-list (missed-opt-report-entry-irritants s))]
+  (when (near-miss-sub-display-entry? s)
+    (for ([i (in-list (near-miss-sub-display-entry-irritants s))]
           #:when (syntax-position i))
       (define start (- (syntax-position i) (syntax-position stx)))
       (define len   (syntax-span i))
@@ -69,7 +69,7 @@
 
   (define message-text (new text:basic% [auto-wrap #t]))
   (send message-text insert
-        (make-object image-snip% (if (missed-opt-report-entry? s)
+        (make-object image-snip% (if (near-miss-sub-display-entry? s)
                                      (x-icon #:height 20)
                                      (check-icon #:height 20))))
   (send message-text insert-port

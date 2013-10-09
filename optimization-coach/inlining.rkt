@@ -193,28 +193,28 @@
        (define start     (sub1 pos))
        (define end       (+ start (syntax-span stx)))
        (define (emit-near-miss msg badness)
-         (emit (report-entry
-                (list (missed-opt-report-entry
-                       located-stx
-                       (format "Missed Inlining ~a\n~a~a"
+         (emit (near-miss-report-entry
+                "inlining-failure"
+                (format "Missed Inlining ~a\n~a~a"
                                (format-aggregation-string pruned-log)
                                (if msg (format "~a\n" msg) "")
                                recommendation)
-                       'inlining
-                       badness
-                       '())) ; no irritants to highlight
-                start end
+                located-stx
+                'inlining
+                start
+                end
                 ;; badness must be an exact integer
-                (exact-round (* badness-multiplier badness)))))
+                (exact-round (* badness-multiplier badness))
+                '()))) ; no irritants to highlight
        (define (emit-success)
-         (emit (report-entry
-                (list (opt-report-entry
-                       located-stx
-                       (format "Inlining ~a"
-                               (format-aggregation-string pruned-log))
-                       'inlining))
-                start end
-                0)))
+         (emit (success-report-entry
+                "inlining-success"
+                (format "Inlining ~a"
+                        (format-aggregation-string pruned-log))
+                located-stx
+                'inlining
+                start
+                end)))
 
        (define inside-hot-function?
          (and hot-functions (memq profile-entry hot-functions)))

@@ -1,9 +1,13 @@
 #lang racket/base
 
 (provide (struct-out report-entry)
-         (struct-out sub-report-entry)
-         (struct-out opt-report-entry)
-         (struct-out missed-opt-report-entry)
+         (struct-out success-report-entry)
+         (struct-out near-miss-report-entry)
+         (struct-out display-entry)
+         display-entry-badness
+         (struct-out sub-display-entry)
+         (struct-out success-sub-display-entry)
+         (struct-out near-miss-sub-display-entry)
          (struct-out inliner-log-entry)
          (struct-out inlining-event)
          ;; from typed-racket/optimizer/logging
@@ -26,21 +30,32 @@
 (struct info-log-entry log-entry () #:prefab)
 
 
+;; IR used for the later passes (locality merging, filtering, etc. anything
+;; that doesn't directly involve interpreting raw logs).
+;; provenance is one of: 'typed-racket 'inlining 'hidden-cost
+(struct report-entry (kind msg stx provenance start end)        #:transparent)
+(struct success-report-entry   report-entry ()                  #:transparent)
+(struct near-miss-report-entry report-entry (badness irritants) #:transparent)
 
-;; Similar to the log-entry family of structs, but geared towards GUI display.
+
+;; Last IR, geared towards GUI display.
 ;; Also designed to contain info for multiple overlapping log entries.
-;; - subs is a list of sub-report-entry, corresponding to all the entries
+;; - subs is a list of sub-display-entry, corresponding to all the entries
 ;;   between start and end
-;; - badness is 0 for a report-entry containing only optimizations
-;;   otherwise, it's the sum for all the subs
-(struct report-entry (subs start end badness) #:transparent)
-;; multiple of these can be contained in a report-entry
-;; provenance is one of: 'typed-racket 'mzc 'hidden-cost
-(struct sub-report-entry (stx msg provenance) #:transparent)
-(struct opt-report-entry        sub-report-entry ()
+;; - start and end are for the whole set of subs
+(struct display-entry (subs start end) #:transparent)
+;; multiple of these can be contained in a display-entry
+(struct sub-display-entry (stx msg) #:transparent)
+(struct success-sub-display-entry sub-display-entry ()
         #:transparent)
-(struct missed-opt-report-entry sub-report-entry (badness irritants)
+(struct near-miss-sub-display-entry sub-display-entry (badness irritants)
         #:transparent)
+
+(define (display-entry-badness d)
+  (for/sum ([s (in-list (display-entry-subs d))])
+    (if (near-miss-sub-display-entry? s)
+        (near-miss-sub-display-entry-badness s)
+        0)))
 
 
 (struct inliner-log-entry log-entry (inlining-event) #:prefab)

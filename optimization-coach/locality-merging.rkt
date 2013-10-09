@@ -10,34 +10,48 @@
 
 (provide locality-merging)
 
-(define (merge-entries prev l)
+(define (merge-display-entries prev l)
   (match* (prev l)
-    [((report-entry subs1 start1 end1 badness1)
-      (report-entry subs2 start2 end2 badness2))
-     (report-entry (append subs1 subs2)
-                   start1 end1 ; prev includes l
-                   (+ badness1 badness2))]))
+    [((display-entry subs1 start1 end1)
+      (display-entry subs2 start2 end2))
+     (display-entry (append subs1 subs2) start1 end1)]))
 
 (define (locality-merging orig-report)
   (pitfall-agnostic-locality-merging
-   (cross-pitfall-locality-merging orig-report)))
+   (map report-entry->display-entry
+        (cross-pitfall-locality-merging orig-report))))
+
+(define (report-entry->display-entry entry)
+  (match-define (report-entry kind msg stx provenance start end) entry)
+  (display-entry
+   (list ; single sub, merging will add more
+    (cond [(success-report-entry? entry)
+           (success-sub-display-entry stx msg)]
+          [(near-miss-report-entry? entry)
+           (near-miss-sub-display-entry
+            stx
+            msg
+            (near-miss-report-entry-badness   entry)
+            (near-miss-report-entry-irritants entry))]))
+   start
+   end))
 
 ;; Detect overlapping reports and merge them. Strictly for display purposes,
 ;; does not generate new information.
 (define (pitfall-agnostic-locality-merging orig-report)
   ;; sort in order of starting point
-  (define report (sort orig-report < #:key report-entry-start))
+  (define report (sort orig-report < #:key display-entry-start))
   (define-values (new-report _)
     (for/fold ([new-report '()]
                [prev #f])
         ([l (in-list report)])
       (match* (prev l)
-        [((report-entry subs1 start1 end1 badness1)
-          (report-entry subs2 start2 end2 badness2))
+        [((display-entry subs1 start1 end1)
+          (display-entry subs2 start2 end2))
          (=> unmatch)
          (if (< start2 end1) ; l in within prev
              ;; merge the two
-             (let ([merged (merge-entries prev l)])
+             (let ([merged (merge-display-entries prev l)])
                (values (cons merged (cdr new-report))
                        merged))
              (unmatch))]
@@ -71,52 +85,47 @@
   (apply
    append
    (for/list ([grp (in-list by-position)])
-     ;; Assumption: report entries should have only one sub at this point
-     (cond [(for/first ([report (in-list grp)]
-                        #:when (> (length (report-entry-subs report)) 1))
-              report)
-            => (lambda (x) (error "got report with > 1 subs" x))])
      ;; Assumption: there will be at most one `for' report at this location.
-     ;; Idem for TR report. (Not checked.)
+     ;; Idem for TR report.
      (define for-sequence-report
        (for/first ([report (in-list grp)]
-                   #:when (sequence-specialization-hidden-cost-report? report))
+                   #:when (and (equal? (report-entry-provenance report)
+                                       'hidden-cost)
+                               (equal? (report-entry-kind report)
+                                       "non-specialized for clause")))
          report))
      (define TR-sequence-report
        (for/first ([report (in-list grp)]
-                   ;; TODO this is a bad way to check. need to check provenance
-                   ;;   too, and really want to check against kind (which has
-                   ;;   been discarded by now)
+                   ;; TODO should check against the kind, not the msg
+                   ;;  problem is: kind is different for in-list and in-range,
+                   ;;  etc.
                    #:when (regexp-match
                            #rx"[Ss]equence type specialization."
-                           (sub-report-entry-msg
-                            (first (report-entry-subs report)))))
+                           (report-entry-msg report)))
          report))
      (cond
       [(and for-sequence-report TR-sequence-report)
        ;; found both kinds of reports, replace them with a unified report
        (define new-badness ; since TR got part of the way, not as bad
-         (ceiling (* (report-entry-badness
+         (ceiling (* (near-miss-report-entry-badness
                       for-sequence-report) ; TR's has no badness, success
                      1/2)))
        (define new-report
-         (report-entry ; unified report
-          (list (missed-opt-report-entry
-                 (sub-report-entry-stx
-                  (first (report-entry-subs for-sequence-report))) ; same as TR
-                 (string-append
-                  "Typed Racket has already partially specialized this "
-                  "generic sequence, which is likely to improve performance.\n"
-                  "However, manually specializing the sequence (by wrapping "
-                  ;; TODO could guess which one to use by looking at TR msg
-                  "it in an `in-list', `in-range', or other sequence form.) "
-                  "may improve performance further.")
-                 'hidden-cost
-                 new-badness
-                 '()))
+         (near-miss-report-entry
+          "partial for clause specialization"
+          (string-append
+           "Typed Racket has already partially specialized this "
+           "generic sequence, which is likely to improve performance.\n"
+           "However, manually specializing the sequence (by wrapping "
+           ;; TODO could guess which one to use by looking at TR msg
+           "it in an `in-list', `in-range', or other sequence form.) "
+           "may improve performance further.")
+          (report-entry-stx for-sequence-report) ; same as TR
+          'hidden-cost
           (report-entry-start for-sequence-report) ; same as TR
           (report-entry-end   for-sequence-report)
-          new-badness))
+          new-badness
+          '()))
        (cons new-report
              (remove for-sequence-report
                      (remove TR-sequence-report grp)))]

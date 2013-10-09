@@ -18,18 +18,11 @@
     [(log-entry kind msg stx located-stx (? number? pos))
      (define start     (sub1 pos))
      (define end       (+ start (syntax-span stx)))
-     (define provenance 'typed-racket)
-     ;; When we first create report entries, they have a single sub.
-     (report-entry (list (if (opt-log-entry? l)
-                             (opt-report-entry located-stx msg provenance)
-                             (missed-opt-report-entry
-                              located-stx msg provenance
-                              (missed-opt-log-entry-badness   l)
-                              (missed-opt-log-entry-irritants l))))
-                   start end
-                   (if (opt-log-entry? l) ; badness
-                       0
-                       (missed-opt-log-entry-badness l)))]
+     (if (opt-log-entry? l)
+         (success-report-entry   kind msg located-stx 'typed-racket start end)
+         (near-miss-report-entry kind msg located-stx 'typed-racket start end
+                                 (missed-opt-log-entry-badness   l)
+                                 (missed-opt-log-entry-irritants l)))]
     [_ #f])) ; no source location, ignore
 
 ;; converts log-entry structs to report-entry structs for further

@@ -9,8 +9,8 @@
  [generate-report (input-port? port-name? (or/c profile? #f) any/c
                                . -> . (listof report-entry?))]
  [finalize-report ((listof report-entry?)
-                   (listof (sub-report-entry? . -> . any/c))
-                   . -> . (listof report-entry?))])
+                   (listof (report-entry? . -> . any/c))
+                   . -> . (listof display-entry?))])
 
 
 ;; profile is currently only used to refine the inlining logs
@@ -30,16 +30,15 @@
 
 ;; Takes a pre-locality-merging report (possibly a fresh one, possibly a
 ;; cached one) and filters (to decide what to show and hide) and produces
-;; a filtered and merged report, ready for user consumption.
+;; a filtered and merged display report, ready for user consumption.
 ;; Filtering and merging are decoupled from report generation to allow
 ;; refreshing filters without having to recompute the report (which is
 ;; expensive).
 (define (finalize-report report filters)
   (locality-merging
    (for/list ([entry (in-list report)]
-              ;; At this point, report enties have a single sub.
               #:when (for/or ([f (in-list filters)])
-                       (f (first (report-entry-subs entry)))))
+                       (f entry)))
      entry)))
 
 

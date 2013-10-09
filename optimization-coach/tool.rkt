@@ -17,14 +17,14 @@
 
 (define check-boxes
   `(("Report Typed Racket optimizations?" .
-     ,(match-lambda [(sub-report-entry s m 'typed-racket) #t]
+     ,(match-lambda [(report-entry k m s 'typed-racket start end) #t]
                     [_ #f]))
     ;; TODO only show these two when profiling info is available
     ("Report inlining optimizations?" .
-     ,(match-lambda [(sub-report-entry s m 'inlining) #t]
+     ,(match-lambda [(report-entry k m s 'inlining start end) #t]
                     [_ #f]))
     ("Report hidden costs?" .
-     ,(match-lambda [(sub-report-entry s m 'hidden-cost) #t]
+     ,(match-lambda [(report-entry k m s 'hidden-cost start end) #t]
                     [_ #f]))))
 
 (define (copy-definitions definitions)
@@ -85,11 +85,9 @@
       (define clear-thunks '()) ; list of thunks that clear highlights
       (define color-table #f)
 
-      ;; filters : Listof (sub-report-entry -> Bool)
-      ;; If any of these predicates return true for a given log entry's
-      ;; sub, show it.
-      ;; Note: at the point where these are called, report entries have
-      ;; a single sub.
+      ;; filters : Listof (report-entry -> Bool)
+      ;; If any of these predicates return true for a given report entry,
+      ;; show it.
       (define filters (map cdr check-boxes)) ; all enabled by default
       (define/public (get-filters) filters)
       (define/public (set-filters! fs) (set! filters fs))
@@ -120,7 +118,8 @@
       ;; proper, not the space at the end of lines. That way, everywhere in
       ;; the highlight has a position, and can spawn popup menus.
       (define/private (highlight-entry l)
-        (match-define (report-entry subs start end badness) l)
+        (match-define (display-entry subs start end) l)
+        (define badness (display-entry-badness l))
         (define color (if (= badness 0)
                           "lightgreen"
                           (vector-ref color-table badness)))
@@ -162,7 +161,7 @@
         (define report
           (finalize-report report-cache filters))
         (define max-badness
-          (apply max (cons 0 (map report-entry-badness report))))
+          (apply max (cons 0 (map display-entry-badness report))))
         (unless (= max-badness 0) ; no missed opts, color table code would error
           (set! color-table (make-color-table max-badness)))
         (begin-edit-sequence)
