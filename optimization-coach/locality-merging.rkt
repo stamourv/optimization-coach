@@ -116,10 +116,9 @@
           (string-append
            "Typed Racket has already partially specialized this "
            "generic sequence, which is likely to improve performance.\n"
-           "However, manually specializing the sequence (by wrapping "
-           ;; TODO could guess which one to use by looking at TR msg
-           "it in an `in-list', `in-range', or other sequence form.) "
-           "may improve performance further.")
+           "However, manually specializing the sequence using `"
+           (report-entry-kind TR-sequence-report)
+           "' may improve performance further.")
           (report-entry-stx for-sequence-report) ; same as TR
           'hidden-cost
           (report-entry-start for-sequence-report) ; same as TR
