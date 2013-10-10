@@ -60,13 +60,15 @@
   new-report)
 
 
-;; Merges reports from different classes of pitfalls that interact.
+(define merging-rules '())
+(define-syntax-rule (define-merging report1-pred report2-pred gen-new-report)
+  (set! merging-rules
+        (cons (list report1-pred report2-pred gen-new-report)
+              merging-rules)))
 
-;; Currently, only merges reports about sequence specialization from the
-;; `for' macros' optimizer and from TR.
+;; Sequence specialization: `for' fails, TR succeeds.
 ;; Sometimes, manual specialization is better than TR's specialization.
 ;; Sometimes, it's the other way around. No clear winner.
-
 ;; Because of this, only consider the combination of the two reports to be
 ;; a near miss when in hot code (or verbose mode). (As a general rule, we
 ;; only report things that may or may not be wins when they occur in hot
@@ -75,58 +77,88 @@
 ;; and only the TR success report will be shown to the user. Since the
 ;; success report mentions that manual specialization may be better, good
 ;; enough when in cold code.
+(define (for-sequence-report? report) ; find the report from `for'
+  (and (equal? (report-entry-kind report) "non-specialized for clause")
+       ;; TR also produces messages with this kind, but these are not the
+       ;; ones we want
+       (equal? (report-entry-provenance report) 'hidden-cost)))
+(define-merging
+  for-sequence-report?
+  (lambda (report) ; find the report from TR
+    ;; TODO should check against the kind, not the msg
+    ;;  problem is: kind is different for in-list and in-range, etc.
+    (regexp-match #rx"[Ss]equence type specialization."
+                  (report-entry-msg report)))
+  (lambda (for-sequence-report TR-sequence-report) ; generate a unified report
+    (define new-badness ; since TR got part of the way, not as bad
+      (ceiling (* (near-miss-report-entry-badness
+                   for-sequence-report) ; TR's has no badness, success
+                  1/2)))
+    (near-miss-report-entry
+     "partial for clause specialization"
+     (string-append
+      "Typed Racket has already partially specialized this generic "
+      "sequence, which is likely to improve performance.\n"
+      "However, manually specializing the sequence using `"
+      (report-entry-kind TR-sequence-report)
+      "' may improve performance further.")
+     (report-entry-stx for-sequence-report) ; same as TR
+     'hidden-cost
+     (report-entry-start for-sequence-report) ; same as TR
+     (report-entry-end   for-sequence-report)
+     new-badness
+     '())))
 
+;; Sequence specialization: `for' fails, TR fails.
+;; Double failure. Instead of reporting twice, report once, with both
+;; explanations. In this case, there are multiple recommendations / solutions
+;; because triggering either opt (TR's or manual specialization) is OK.
+;; Note: this will only be shown in hot code, o/w only the TR failure will
+;; be produced.
+(define-merging
+  for-sequence-report?
+  (lambda (report)
+    (and (equal? (report-entry-kind report) "non-specialized for clause")
+         (equal? (report-entry-provenance report) 'typed-racket)))
+  (lambda (for-sequence-report TR-sequence-report)
+    (near-miss-report-entry
+     "double for clause specialization failure"
+     ;; Keep message from the TR report, since it already mentions both
+     ;; solutions.
+     (report-entry-msg TR-sequence-report)
+     (report-entry-stx for-sequence-report) ; same as TR
+     'TR
+     (report-entry-start for-sequence-report) ; same as TR
+     (report-entry-end   for-sequence-report)
+     (near-miss-report-entry-badness TR-sequence-report)
+     '())))
+
+
+;; Merges reports from different classes of pitfalls that interact.
+;; Reports need to affect the *exact* same location (same start and end).
 (define (cross-pitfall-locality-merging orig-report)
-  ;; sequence specialization reports for the same sequence will start and
-  ;; end in the same place
+  ;; look for reports that affect the same location
   (define by-position
     (group-by (lambda (x) (cons (report-entry-start x) (report-entry-end x)))
               orig-report))
   (apply
    append
    (for/list ([grp (in-list by-position)])
-     ;; Assumption: there will be at most one `for' report at this location.
-     ;; Idem for TR report.
-     (define for-sequence-report
-       (for/first ([report (in-list grp)]
-                   #:when (and (equal? (report-entry-provenance report)
-                                       'hidden-cost)
-                               (equal? (report-entry-kind report)
-                                       "non-specialized for clause")))
-         report))
-     (define TR-sequence-report
-       (for/first ([report (in-list grp)]
-                   ;; TODO should check against the kind, not the msg
-                   ;;  problem is: kind is different for in-list and in-range,
-                   ;;  etc.
-                   #:when (regexp-match
-                           #rx"[Ss]equence type specialization."
-                           (report-entry-msg report)))
-         report))
-     (cond
-      [(and for-sequence-report TR-sequence-report)
-       ;; found both kinds of reports, replace them with a unified report
-       (define new-badness ; since TR got part of the way, not as bad
-         (ceiling (* (near-miss-report-entry-badness
-                      for-sequence-report) ; TR's has no badness, success
-                     1/2)))
-       (define new-report
-         (near-miss-report-entry
-          "partial for clause specialization"
-          (string-append
-           "Typed Racket has already partially specialized this "
-           "generic sequence, which is likely to improve performance.\n"
-           "However, manually specializing the sequence using `"
-           (report-entry-kind TR-sequence-report)
-           "' may improve performance further.")
-          (report-entry-stx for-sequence-report) ; same as TR
-          'hidden-cost
-          (report-entry-start for-sequence-report) ; same as TR
-          (report-entry-end   for-sequence-report)
-          new-badness
-          '()))
-       (cons new-report
-             (remove for-sequence-report
-                     (remove TR-sequence-report grp)))]
-      [else ; nothing to do, leave the group alone
-       grp]))))
+     ;; Assumption: each rule fires at most once, and order doesn't matter.
+     (for/fold ([grp grp])
+         ([rule (in-list merging-rules)])
+       (match-define `(,report1-pred ,report2-pred ,gen-new-report) rule)
+       (define report1 (for/first ([report (in-list grp)]
+                                   #:when (report1-pred report))
+                         report))
+       (define report2 (for/first ([report (in-list grp)]
+                                   #:when (report2-pred report))
+                         report))
+       (cond
+        [(and report1 report2) ; found both, replace with a unified report
+         (define new-report (gen-new-report report1 report2))
+         (cons new-report
+               (remove report1
+                       (remove report2 grp)))]
+        [else ; nothing to do, leave the group alone
+         grp])))))
