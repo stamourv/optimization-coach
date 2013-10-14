@@ -181,7 +181,7 @@
 
        (define recommendation
          (string-append
-          "Consider using `define/inline', `begin-encourage-inline' or "
+          "Consider using `define-inline', `begin-encourage-inline' or "
           (cond [is-a-loop?
                  "making this function smaller, to encourage inlining."]
                 [else
