@@ -37,7 +37,9 @@ Given profiling information about your program, Optimization Coach can tailor
 its recommendations to help you focus on the parts of your program that really
 matter.
 
-@defform[(optimization-coach-profile body ...)]{
+@defform[(optimization-coach-profile
+           #:use-errortrace? [u-e? #t]
+           body ...)]{
 To gather profiling information for use with Optimization Coach, wrap the
 portion of your program that you want to profile (typically an entry point to
 the program) with @racket[optimization-coach-profile].
@@ -45,7 +47,17 @@ the program) with @racket[optimization-coach-profile].
 When you next run your program, profiling information will be written to a
 file, ready to be used by Optimization Coach. The output filename is
 constructed by appending the @tt{.profile} suffix to the program's filename.
+
+By default, Optimization Coach uses errortrace for profiling (if
+errortrace-based profiling is available for your version of Racket).
+Errortrace-based profiling only profiles non-compiled files, or files compiled
+with errortrace annotations. You may need to delete your program's
+@tt{compiled} directories before profiling. To enable errotrace support at the
+command-line:
+@commandline{racket -l errortrace -t file.rkt}
 }
+To instead use the basic Racket profiler (using best-effort stack traces from
+the runtime system), set the @racket[#:use-errortrace?] argument to @racket[#f].
 
 Once you have gathered profiling information, you can feed it to Optimization
 Coach by specifying the profile file and clicking the @bold{Refine} button.
