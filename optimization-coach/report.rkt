@@ -45,20 +45,27 @@
 (module+ main
   ;; TODO have this be a raco tool at some point
   (require racket/cmdline racket/pretty)
-  ;; TODO have flags for profile file, etc.
-  (define verbose-mode #f)
+  ;; TODO have flags to choose profile file, etc.
+  (define verbose-mode? #f)
+  (define profile-mode? #f)
   (define filename
     (path->complete-path
      (command-line
-      #:once-each ["-v" "Verbose mode." (set! verbose-mode #t)]
+      #:once-each
+      ["-v" "Verbose mode." (set! verbose-mode? #t)]
+      ["-p" "Profile mode." (set! profile-mode? #t)]
       #:args (filename)
       filename)))
-  (for ([x (finalize-report
-            (generate-report (open-input-file filename)
-                             filename
-                             #f
-                             verbose-mode)
-            `(,values))]) ; only filter: anything goes
+  (define report
+    (finalize-report
+     (generate-report (open-input-file filename)
+                      filename
+                      (and profile-mode?
+                           (load-profile (string-append (path->string filename)
+                                                        ".profile")))
+                      verbose-mode?)
+     `(,values))) ; only filter: anything goes
+  (for ([x report])
     (pretty-print x)
     (newline))
   )
