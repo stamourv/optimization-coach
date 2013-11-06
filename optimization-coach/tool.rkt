@@ -207,7 +207,7 @@
         (if (file-exists? profile-file)
             (add-highlights
              #:source  source
-             #:profile (generate-profile this source profile-file))
+             #:profile (load-profile profile-file))
             (message-box "Optimization Coach"
                          (format "Profile file not found: ~a" profile-file)
                          #f
