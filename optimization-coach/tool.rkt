@@ -6,7 +6,7 @@
          (for-syntax racket/base images/icons/misc images/icons/style)
          string-constants)
 
-(require "structs.rkt" "report.rkt" "profiling.rkt" "display.rkt")
+(require "structs.rkt" "report.rkt" "display.rkt")
 
 (provide tool@ optimization-coach-drracket-button)
 
@@ -144,19 +144,19 @@
       ;; source is either a copy of the definitions text (we're not in the
       ;; main thread, so operating on the definitions directly is a bad idea)
       ;; or #f, in which case the report cache is used.
-      ;; profile is either a list of analyzed profile nodes (in which case we
-      ;; use it to refine the report) or #f. Profile information causes the
-      ;; report to be recomputed, invalidating the cache.
+      ;; profile-file is either the name of a file containing profile samples
+      ;; or #f. Profile information causes the report to be recomputed,
+      ;; invalidating the cache.
       ;; in verbose mode, show more reports, even in cold code, or without
       ;; profiling info
-      (define/public (add-highlights #:source   [source   #f]
-                                     #:profile  [profile  #f]
-                                     #:verbose? [verbose? #f])
+      (define/public (add-highlights #:source       [source        #f]
+                                     #:profile-file [profile-file  #f]
+                                     #:verbose?     [verbose?      #f])
         (clear-highlights)
-        (unless (and report-cache (not source) (not profile))
+        (unless (and report-cache (not source) (not profile-file))
           (set! report-cache (generate-report (open-input-text-editor source)
                                               (send source get-port-name)
-                                              profile
+                                              profile-file
                                               verbose?)))
         (define report
           (finalize-report report-cache filters))
@@ -206,8 +206,8 @@
       (define/public (optimization-coach-profile source)
         (if (file-exists? profile-file)
             (add-highlights
-             #:source  source
-             #:profile (load-profile profile-file))
+             #:source       source
+             #:profile-file profile-file)
             (message-box "Optimization Coach"
                          (format "Profile file not found: ~a" profile-file)
                          #f

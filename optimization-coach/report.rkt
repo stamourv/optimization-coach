@@ -6,16 +6,21 @@
          "locality-merging.rkt" "structs.rkt")
 
 (provide/contract
- [generate-report (input-port? port-name? (or/c profile? #f) any/c
+ [generate-report (input-port? port-name? (or/c path-string? #f) any/c
                                . -> . (listof report-entry?))]
  [finalize-report ((listof report-entry?)
                    (listof (report-entry? . -> . any/c))
                    . -> . (listof display-entry?))])
 
 
-;; profile is currently only used to refine the inlining logs
-(define (generate-report input port-name profile verbose?)
-  (define-values (TR-log mzc-log info-log) (generate-logs input port-name))
+(define (generate-report input port-name profile-file verbose?)
+  (define-values (orig-syntax expanded-syntax TR-log mzc-log info-log)
+    (generate-logs input port-name))
+
+  (define profile
+    (and profile-file
+         (load-profile profile-file orig-syntax expanded-syntax)))
+
   (define hot-functions (and profile (prune-profile profile)))
   (define (gen-hidden-costs)
     (report-hidden-costs info-log profile hot-functions))
@@ -61,8 +66,7 @@
      (generate-report (open-input-file filename)
                       filename
                       (and profile-mode?
-                           (load-profile (string-append (path->string filename)
-                                                        ".profile")))
+                           (string-append (path->string filename) ".profile"))
                       verbose-mode?)
      `(,values))) ; only filter: anything goes
   (for ([x report])

@@ -5,7 +5,9 @@
          "structs.rkt" "sandbox.rkt" "utils.rkt")
 
 (provide/contract
- [generate-logs (input-port? port-name? . -> . (values (listof log-entry?)
+ [generate-logs (input-port? port-name? . -> . (values syntax? ; original
+                                                       syntax? ; fully expanded
+                                                       (listof log-entry?)
                                                        (listof log-entry?)
                                                        (listof log-entry?)))])
 
@@ -32,6 +34,13 @@
   (define TR-log   '())
   (define mzc-log  '())
   (define info-log '()) ; for hidden costs
+  (define source-syntax
+    (run-inside-optimization-coach-sandbox
+     port-name
+     (lambda ()
+       (read-syntax port-name input))))
+
+  ;; get optimizer logs
   (install-log-interceptors
    (list
     (list 'debug 'optimizer
@@ -62,12 +71,25 @@
      (run-inside-optimization-coach-sandbox
       port-name
       (lambda ()
-        (void (compile (read-syntax port-name input)))))))
+        (void (compile source-syntax))))))
+
+  ;; keep a copy of the expanded code around, will come in handy
+  ;; (e.g. to know where function boundaries are)
+  (define expanded-syntax
+    (run-inside-optimization-coach-sandbox
+     port-name
+     (lambda ()
+       (expand source-syntax))))
+
   ;; The raw TR logs may contain duplicates from the optimizer traversing
   ;; the same piece of code multiple times.
   ;; Duplicates are not significant (unlike for inlining logs) and we can
   ;; prune them.
-  (values (remove-duplicates TR-log) mzc-log (remove-duplicates info-log)))
+  (values source-syntax
+          expanded-syntax
+          (remove-duplicates TR-log)
+          mzc-log
+          (remove-duplicates info-log)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

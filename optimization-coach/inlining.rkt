@@ -130,6 +130,8 @@
        ;; This serves as a building block for more interesting patterns, such
        ;; as `key-sites' below.
        ;; returns: caller-profile-node OR #f
+       ;; TODO with an errortrace-based expression profile, could maybe point
+       ;;  directly to the relevant call sites, not just to the caller
        (define interesting-callers
          (and profile-entry
               (filter values
