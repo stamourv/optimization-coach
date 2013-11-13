@@ -63,13 +63,19 @@
 
 ;; Base badness values below are arbitrary.
 
-(define-hidden-cost
-  "hidden parameter"
-  (string-append "This function may implicitly dereference the "
-                 "`current-output-port' parameter. " ;; TODO hard coded
+(define (parameter-message p)
+  (string-append "This function may implicitly dereference the `"
+                 p "' parameter. "
                  "It may be faster to take the value of the "
                  "parameter once, outside hot code, and pass it "
-                 "to this function as an argument.")
+                 "to this function as an argument."))
+(define-hidden-cost
+  "hidden parameter"
+  (parameter-message "current-output-port")
+  20)
+(define-hidden-cost
+  "hidden parameter (random)"
+  (parameter-message "current-pseudo-random-generator")
   20)
 
 (define-hidden-cost
