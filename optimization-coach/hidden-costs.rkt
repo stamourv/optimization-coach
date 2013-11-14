@@ -96,6 +96,13 @@
   ;; TODO don't hard-code `quotient', show the right one depending on the operation
   "results, such as `quotient', or using floating-point numbers.")
  20)
+(define-hidden-cost
+ "non-optimized fixnum op"
+ (string-append
+  "The result of this fixnum-specific operation is not guaranteed to be "
+  "within fixnum range, which prevents safety checks from being elided. "
+  "Consider using the unsafe version of this operation to avoid checks.")
+ 20)
 
 (define sequence-specialization-hidden-cost-msg
   (string-append
