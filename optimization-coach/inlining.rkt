@@ -2,7 +2,7 @@
 
 ;;;; Processing of mzc inliner logs.
 
-(require racket/match racket/list racket/string racket/math
+(require racket/match racket/list racket/string racket/math unstable/list
          "structs.rkt" "utils.rkt" "instrumentation.rkt" "profiling.rkt")
 
 (provide report-inlining)
