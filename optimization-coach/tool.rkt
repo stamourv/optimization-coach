@@ -346,7 +346,10 @@
               (send (get-definitions-text) get-profile-file)))
 
       (define/public (hide-optimization-coach)
-        (send (get-area-container) delete-child panel))
+        (define container (get-area-container))
+        ;; in rare cases, for unknown reasons, the panel may already be gone
+        (when (member panel (send container get-children))
+          (send container delete-child panel)))
 
 
       ;; tab switching
