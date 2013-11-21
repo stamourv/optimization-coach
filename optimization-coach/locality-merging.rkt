@@ -10,16 +10,38 @@
 
 (provide locality-merging)
 
-(define (merge-display-entries prev l)
-  (match* (prev l)
-    [((display-entry subs1 start1 end1)
-      (display-entry subs2 start2 end2))
-     (display-entry (remove-duplicates (append subs1 subs2)) start1 end1)]))
-
 (define (locality-merging orig-report)
-  (pitfall-agnostic-locality-merging
-   (map report-entry->display-entry
-        (cross-pitfall-locality-merging orig-report))))
+  (define merged-entries
+    (pitfall-agnostic-locality-merging
+     (map report-entry->display-entry
+          (cross-pitfall-locality-merging orig-report))))
+  ;; For reports in, e.g., the template of a macro, duplicate reports may end
+  ;; up here, up to one per expansion site. Showing them all is terrible UI,
+  ;; and adding up their badnesses wrecks the curve. Instead, show reports only
+  ;; once, with a count if need be.
+  ;; TODO what to do about badness? don't want to add up, but may not want to
+  ;;  just leave as is either
+  (for/list ([entry (in-list merged-entries)])
+    ;; for each entry, remove duplicate sub-entries, replace them with a count
+    (match-define (display-entry subs start end) entry)
+    (display-entry (for/list ([g (in-list (group-by values subs))])
+                     (define len (length g))
+                     (define rep (first g))
+                     (define stx (sub-display-entry-stx rep))
+                     (define msg (sub-display-entry-msg rep))
+                     (define new-msg (format "~a\n\n(~a times)" msg len))
+                     (if (= len 1)
+                         rep ; leave unchanged
+                         ;; subs in g are either all successes or all failures
+                         (if (success-sub-display-entry? rep)
+                             (success-sub-display-entry stx new-msg)
+                             (near-miss-sub-display-entry
+                              stx
+                              new-msg
+                              (near-miss-sub-display-entry-badness   rep)
+                              (near-miss-sub-display-entry-irritants rep)))))
+                   start
+                   end)))
 
 (define (report-entry->display-entry entry)
   (match-define (report-entry kind msg stx provenance start end) entry)
@@ -35,6 +57,12 @@
             (near-miss-report-entry-irritants entry))]))
    start
    end))
+
+(define (merge-display-entries prev l)
+  (match* (prev l)
+    [((display-entry subs1 start1 end1)
+      (display-entry subs2 start2 end2))
+     (display-entry (append subs1 subs2) start1 end1)]))
 
 ;; Detect overlapping reports and merge them. Strictly for display purposes,
 ;; does not generate new information.
