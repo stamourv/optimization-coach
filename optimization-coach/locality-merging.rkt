@@ -14,7 +14,7 @@
   (match* (prev l)
     [((display-entry subs1 start1 end1)
       (display-entry subs2 start2 end2))
-     (display-entry (append subs1 subs2) start1 end1)]))
+     (display-entry (remove-duplicates (append subs1 subs2)) start1 end1)]))
 
 (define (locality-merging orig-report)
   (pitfall-agnostic-locality-merging
