@@ -153,11 +153,33 @@
                                      #:profile-file [profile-file  #f]
                                      #:verbose?     [verbose?      #f])
         (clear-highlights)
+
         (unless (and report-cache (not source) (not profile-file))
-          (set! report-cache (generate-report (open-input-text-editor source)
-                                              (send source get-port-name)
-                                              profile-file
-                                              verbose?)))
+          (define-values (basic-reports verbose-reports)
+            (generate-report (open-input-text-editor source)
+                             (send source get-port-name)
+                             profile-file))
+          (when (and (empty? basic-reports) (empty? verbose-reports))
+            (message-box "Optimization Coach" "Nothing to report."))
+          (define show-verbose?
+            (or verbose?
+                (and (empty? basic-reports)
+                     (not (empty? verbose-reports))
+                     (not profile-file) ; not already in profile mode
+                     ;; no basic reports, ask whether verbose reports
+                     ;; should be shown
+                     (eq? (message-box "Optimization Coach"
+                                       (string-append
+                                        "No reports available in basic mode.\n"
+                                        "Switch to verbose mode?")
+                                       #f
+                                       '(yes-no))
+                          'yes))))
+          (set! report-cache (append basic-reports
+                                     (if (or show-verbose? profile-file)
+                                         verbose-reports
+                                         '()))))
+
         (define report
           (finalize-report report-cache filters))
         (define max-badness
