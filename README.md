@@ -13,3 +13,5 @@ How to use
 * Open a Typed Racket file in DrRacket.
 * Click the *Optimization Coach* button.
 * `raco doc optimization coach`
+
+For more info, check out [our OOPSLA 2012 paper](http://www.ccs.neu.edu/racket/pubs/oopsla12-stf.pdf).

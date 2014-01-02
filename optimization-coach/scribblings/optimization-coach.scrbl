@@ -30,6 +30,13 @@ When running from unytped Racket languages, Optimization Coach does not report
 information about Typed Racket optimizations, and only reports information from
 the Racket inliner.
 
+For more information about Optimization Coach's capabilities, see
+@link["http://www.ccs.neu.edu/racket/pubs/oopsla12-stf.pdf"]{our OOPSLA 2012
+paper}. Note that there have been multiple extensions added since its
+publication.
+
+@; TODO add a list of all the reports it can give, with examples
+
 
 @section{Refining Recommendations with Profiling Information}
 
