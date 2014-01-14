@@ -89,7 +89,7 @@
  20)
 
 (define-hidden-cost
- "exact real arith"
+ "possible exact real arith"
  (string-append
   "This expression may use exact rational arithmetic, which is inefficient. "
   "You can avoid this by using operations that don't return fractional "
