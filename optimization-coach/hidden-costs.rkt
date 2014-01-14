@@ -88,13 +88,19 @@
   "struct constructor and accessors.")
  20)
 
+(define real-arith-hidden-cost-msg
+  (string-append
+   "This expression may use exact rational arithmetic, which is inefficient. "
+   "You can avoid this by using operations that don't return fractional "
+   ;; TODO don't hard-code `quotient', show the right one depending on the operation
+   "results, such as `quotient', or using floating-point numbers."))
 (define-hidden-cost
- "exact real arith"
- (string-append
-  "This expression may use exact rational arithmetic, which is inefficient. "
-  "You can avoid this by using operations that don't return fractional "
-  ;; TODO don't hard-code `quotient', show the right one depending on the operation
-  "results, such as `quotient', or using floating-point numbers.")
+ "possible exact real arith"
+ real-arith-hidden-cost-msg
+ 20)
+(define-hidden-cost
+ "exact real arith" ; old message (Racket 6.0 and before) for backw. compat.
+ real-arith-hidden-cost-msg
  20)
 (define-hidden-cost
  "non-optimized fixnum op"
