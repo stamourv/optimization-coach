@@ -63,7 +63,13 @@
   (list
    "Optimization Coach"
    optimization-coach-bitmap
-   (lambda (drr-frame) (send drr-frame launch-optimization-coach))))
+   (lambda (drr-frame)
+     (with-handlers
+         ([exn:fail:object?
+           (lambda _ (message-box
+                      "Optimization Coach"
+                      "Please restart DrRacket to use Optimization Coach."))])
+       (send drr-frame launch-optimization-coach)))))
 
 (define-unit tool@
 
