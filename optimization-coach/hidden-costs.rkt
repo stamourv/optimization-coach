@@ -127,8 +127,12 @@
   (match-define `(,message ,base-badness)
     (dict-ref hidden-cost-corpus (log-entry-kind info-entry)))
   (define badness   (ceiling (* base-badness badness-multiplier)))
-  (define start     (sub1 (log-entry-pos info-entry)))
-  (define end       (+ start (syntax-span (log-entry-stx info-entry))))
+  (define pos       (log-entry-pos info-entry))
+  (define span      (syntax-span (log-entry-stx info-entry)))
+  (define start     (and pos (sub1 pos)))
+  (define end       (and start span (+ start span)))
+  (unless (and pos span)
+    (warn-unsaved-file))
   (near-miss-report-entry
    (log-entry-kind info-entry)
    message

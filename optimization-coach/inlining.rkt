@@ -66,6 +66,14 @@
     (match (car log) ; events are grouped, first element is representative
       [(log-entry kind msg stx located-stx pos)
 
+       ;; prune some incomprehensible failures
+       ;; if we don't know where that was, can't report
+       ;; (since logs are grouped by pos, the entire group is unrecoverable)
+       ;; some of those can be solved by saving the file before running OC
+       (unless pos
+         (warn-unsaved-file)
+         (prune))
+
        ;; #f if no profiling info is available for this function
        ;; takes in either a single pos number or a pair of numbers (line col)
        (define (pos->node pos)
