@@ -14,7 +14,10 @@
 ;; even if we don't have profiling info available.
 ;; If profile is #f, we are in verbose mode, and report all hidden costs.
 (define (report-hidden-costs info-log* profile hot-functions)
-  (define info-log (filter info-log-entry? info-log*))
+  (define info-log
+    (for/list ([e (in-list info-log*)]
+               #:when (info-log-entry? e))
+      (determine-info-log-entry-kind e)))
   (cond
    [profile
     (define-values (report _)
@@ -33,6 +36,25 @@
     report]
    [else ; verbose mode, report everything
     (map log-entry->report info-log)]))
+
+;; Some log entries already have their `kind' field set to a recognizeable
+;; value, others have the full message there. For the latter, replace the
+;; message with a common description for the hidden cost class.
+(define (determine-info-log-entry-kind entry)
+  (match-define (info-log-entry kind msg stx located-stx pos) entry)
+  (define old-kind (log-entry-kind entry))
+  (define (update-kind k) (info-log-entry k msg stx located-stx pos))
+  (cond
+   ;; TODO currently, the syntax object payload of these messages is fully
+   ;;   expanded syntax, so not great for users. eventually try to get original
+   ;;   syntax, or get from DrRacket buffer (at least in GUI mode)
+   [(regexp-match "^optimizer: chaperoning to prevent undefined access due to:"
+                  old-kind)
+    (update-kind class-chaperone-kind)]
+   ;; TODO also do logging for letrec checks for undefined.
+   ;;   that's trickier, though, needs parsing of log message to get source location
+   ;; TODO eventually, handle sequence specialization failure the same way
+   [else entry])) ; already fine
 
 (define (process-profile-node profile-entry hot-functions info-log total-time)
   (define produced-entries '())
@@ -119,6 +141,16 @@
  "non-specialized for clause"
  sequence-specialization-hidden-cost-msg
  20)
+
+(define class-chaperone-kind "class chaperone, use before def")
+(define-hidden-cost
+  class-chaperone-kind
+  (string-append
+   "This reference may appear before its definition. "
+   "Because of this, the class system must fall back to a conservative "
+   "(and slower) implementation strategy. Try avoiding uses before "
+   "definitions.")
+  20)
 
 ;; Converts an info log entry to a hidden cost report.
 ;; Optionally takes a badness multiplier, based on profiling information.

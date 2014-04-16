@@ -25,12 +25,15 @@
   (port-count-lines! input)
   (define (right-file? l) ; does the log-entry refer to the file we're in?
     (define stx  (log-entry-stx l))
-    (define dir  (syntax-source-directory stx))
-    (define file (syntax-source-file-name stx))
-    (define path (if (and dir file)
-                     (build-path dir file)
-                     #f))
-    (file-predicate path))
+    (cond [(syntax? stx) ; good, let's keep checking
+           (define dir  (syntax-source-directory stx))
+           (define file (syntax-source-file-name stx))
+           (define path (if (and dir file)
+                            (build-path dir file)
+                            #f))
+           (file-predicate path)]
+          [else ; no location, reject
+           #f]))
   (define TR-log   '())
   (define mzc-log  '())
   (define info-log '()) ; for hidden costs
@@ -48,7 +51,16 @@
             ;; From mzc, create a log-entry from the info.
             (define entry (mzc-opt-log-message->log-entry (vector-ref l 1)))
             (when (and entry (right-file? entry))
-              (set! mzc-log (cons entry mzc-log)))))
+              (set! mzc-log (cons entry mzc-log)))
+            ;; From some other optimizer, add to the info log.
+            (unless entry
+              (define msg   (vector-ref l 1))
+              (define stx   (vector-ref l 2))
+              (define entry (info-log-entry msg msg stx stx
+                                            (and (syntax? stx) ; can be #f
+                                                 (syntax-position stx))))
+              (when (right-file? entry)
+                (set! info-log (cons entry info-log))))))
     (list 'debug 'TR-optimizer
           (lambda (l)
             ;; From TR, use the log-entry struct provided.
@@ -58,6 +70,7 @@
                   (set! info-log (cons entry info-log))
                   (set! TR-log   (cons entry TR-log))))))
     (list 'debug 'sequence-specialization
+          ;; TODO eventually, use 'optimizer as key, like other optimizers
           (lambda (l)
             ;; build an info-log-entry out of it
             (define clause-stx (vector-ref l 2))
