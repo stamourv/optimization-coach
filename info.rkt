@@ -9,3 +9,6 @@
                "images-lib" "sandbox-lib" "string-constants-lib" "typed-racket-lib"
                "unstable-list-lib" "unstable-pretty-lib"))
 (define build-deps '("scribble-lib"))
+
+(define pkg-desc "Optimization Coach Plug-In for DrRacket.")
+(define pkg-authors '(stamourv))
