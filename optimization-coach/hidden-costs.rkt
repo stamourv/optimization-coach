@@ -152,6 +152,18 @@
    "definitions.")
   20)
 
+(define-hidden-cost
+  "non-regexp pattern"
+  (string-append
+   "This regexp operation does not use a regexp value as its pattern argument, "
+   "and uses a string (or byte-string) instead. This prevents the regex from "
+   "being compiled ahead of time, which may slow your program down. "
+   "Try converting the string to a regexp value using `regexp' or using"
+   "regular expression literals using `#rx'.")
+  20)
+
+;; TODO regexp thing. then try it. then reply to email thread
+
 ;; Converts an info log entry to a hidden cost report.
 ;; Optionally takes a badness multiplier, based on profiling information.
 ;; Default multiplier brings hidden costs to the same badness as other reports.
