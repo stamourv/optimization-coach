@@ -222,7 +222,9 @@
       (list* thread-id milliseconds (reverse rev-converted-marks))))
 
   ;; Third step: analyze the converted samples, to get the function graph
-  (analyze-samples (cons cpu-time converted-samples)))
+  ;; (analyze-samples (cons cpu-time converted-samples)) ;; TODO attempt
+  (analyze-samples samples)
+  )
 
 
 ;; In some cases, we only want to consider "hot" functions for further
