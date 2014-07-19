@@ -276,17 +276,18 @@
         (set-show-menu-sort-key optimization-coach-menu-item 403))
       (define optimization-coach-menu-item #f)
 
-
+;; ---------------------------------------------------------------------------------------------------
       ;; right-click menu
       (keymap:add-to-right-button-menu
        (let ([old (keymap:add-to-right-button-menu)])
          (lambda (menu editor event)
-           (let-values ([(pos text) (send editor get-pos/text event)])
-             (when (is-a? editor drracket:unit:definitions-text<%>)
-               ;; has the optimization-coach mixin
-               (send editor build-optimization-coach-popup-menu
-                     menu pos text)))
-           (old menu editor event))))
+	   (when (is-a? editor text:basic<%>)
+	     (let-values ([(pos text) (send editor get-pos/text event)])
+	       (when (is-a? editor drracket:unit:definitions-text<%>)
+		 ;; has the optimization-coach mixin
+		 (send editor build-optimization-coach-popup-menu menu pos text)))
+	     (old menu editor event)))))
+;; ---------------------------------------------------------------------------------------------------      
 
 
       ;; control panel
