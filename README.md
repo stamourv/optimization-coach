@@ -14,4 +14,6 @@ How to use
 * Click the *Optimization Coach* button.
 * `raco doc optimization coach`
 
+[Docs](http://pkg-build.racket-lang.org/doc/optimization-coach@optimization-coach/index.html)
+
 For more info, check out [our OOPSLA 2012 paper](http://www.ccs.neu.edu/racket/pubs/oopsla12-stf.pdf).
