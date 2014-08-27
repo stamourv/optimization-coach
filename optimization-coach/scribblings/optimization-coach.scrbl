@@ -28,7 +28,9 @@ Optimization Coach is also available for other Racket languages through the
 @bold{Show Optimization Coach} entry in the @bold{View} menu.
 When running from unytped Racket languages, Optimization Coach does not report
 information about Typed Racket optimizations, and only reports information from
-the Racket inliner.
+the Racket optimizer.
+
+You can exit the coach by clicking the @bold{Close} button.
 
 For more information about Optimization Coach's capabilities, see
 @link["http://www.ccs.neu.edu/racket/pubs/oopsla12-stf.pdf"]{our OOPSLA 2012
