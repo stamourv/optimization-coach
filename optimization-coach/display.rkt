@@ -14,13 +14,24 @@
 (define tt-style-delta (new style-delta%))
 (send tt-style-delta set-family 'modern)
 
+(define menu-frame%
+  (frame:standard-menus-mixin
+   (frame:basic-mixin
+    frame%)))
+(define popup-text%
+  (editor:keymap-mixin
+   (editor:basic-mixin
+    text%)))
 (define ((popup-callback entry) ed start end)
   (match-define (display-entry subs start end) entry)
-  (define win (new frame% [label "Optimization Coach"]
+  (define win (new menu-frame% [label "Optimization Coach"]
                    [width popup-width] [height popup-height]))
-  (define pane (new text% [auto-wrap #t]))
+  (define pane (new popup-text% [auto-wrap #t]))
   (define canvas
-    (new editor-canvas% [parent win] [editor pane] [style '(no-hscroll)]))
+    (new editor-canvas%
+         [parent (send win get-area-container)]
+         [editor pane]
+         [style  '(no-hscroll)]))
   (for-each (format-sub-display-entry pane) subs)
   (send canvas scroll-to 0 0 0 0 #t) ; display the beginning
   (send pane lock #t)
