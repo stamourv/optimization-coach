@@ -189,7 +189,14 @@
                    [current-function #f]
                    [current-frame    '()])
             ([m (in-list marks)])
-          (match-define `(,maybe-name . ,maybe-srcloc) m)
+          (match-define `(,maybe-name . ,maybe-srcloc*) m)
+          (define maybe-srcloc
+            (and maybe-srcloc*
+                 ;; barf @ multiple source location representations
+                 (cond [(srcloc? maybe-srcloc*) maybe-srcloc*]
+                       [(list? maybe-srcloc*)   (apply srcloc maybe-srcloc*)]
+                       [(vector? maybe-srcloc*)
+                        (apply srcloc (vector->list maybe-srcloc*))])))
           (define maybe-function
             (and maybe-srcloc (pos->function (srcloc-position maybe-srcloc))))
           (cond [(and maybe-function
