@@ -6,8 +6,7 @@
 
 (define deps '("base" "profile-lib" "rackunit-lib" "drracket" "gui-lib"
                "data-lib" "source-syntax"
-               "images-lib" "sandbox-lib" "string-constants-lib" "typed-racket-lib"
-               "unstable-list-lib" "unstable-pretty-lib"))
+               "images-lib" "sandbox-lib" "string-constants-lib" "typed-racket-lib"))
 (define build-deps '("scribble-lib"))
 
 (define pkg-desc "Optimization Coach Plug-In for DrRacket.")

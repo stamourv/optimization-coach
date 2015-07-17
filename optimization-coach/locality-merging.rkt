@@ -5,7 +5,7 @@
 ;; different optimizations interact).
 ;; Pitfall-specific locality merging is done in the pitfall's file.
 
-(require racket/match racket/list unstable/list
+(require racket/match racket/list
          "structs.rkt" "hidden-costs.rkt")
 
 (provide locality-merging)
