@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require racket/string racket/match racket/list racket/contract
-         unstable/syntax unstable/logging
+         unstable/syntax racket/logging
          "structs.rkt" "sandbox.rkt" "utils.rkt")
 
 (provide/contract
