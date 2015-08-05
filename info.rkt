@@ -4,7 +4,8 @@
 
 (define version "3.0")
 
-(define deps '("base" "profile-lib" "rackunit-lib" "drracket" "gui-lib"
+(define deps '(("base" #:version "6.2.900.6")
+               "profile-lib" "rackunit-lib" "drracket" "gui-lib"
                "data-lib" "source-syntax"
                "images-lib" "sandbox-lib" "string-constants-lib" "typed-racket-lib"))
 (define build-deps '("scribble-lib"))
