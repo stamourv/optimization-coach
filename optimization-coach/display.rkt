@@ -3,7 +3,6 @@
 (require racket/string racket/class racket/gui/base racket/match racket/port
          framework syntax/to-string
          "structs.rkt"
-         unstable/sequence
          images/icons/symbol)
 
 (provide popup-callback make-color-table)

@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/class racket/port racket/list racket/match unstable/sequence
+(require racket/class racket/port racket/list racket/match racket/dict
          racket/gui/base racket/unit drracket/tool mrlib/switchable-button
          images/compile-time framework
          (for-syntax racket/base images/icons/misc images/icons/style)
@@ -344,7 +344,7 @@
                   (define fn (path->string f))
                   (send profile-file-field set-value fn)
                   (send (get-definitions-text) set-profile-file! fn)))])
-        (for ([(l f) (in-pairs check-boxes)])
+        (for ([(l f) (in-dict check-boxes)])
           (new check-box%
                [label l]
                [parent check-box-panel]
@@ -370,7 +370,7 @@
                                                        get-children))]
                                      #:when (is-a? c check-box%))
                             c))]
-              [(l f) (in-pairs check-boxes)])
+              [(l f) (in-dict check-boxes)])
           (send c set-value (memq f filters)))
         ;; update profile-file-field
         (send profile-file-field set-value
