@@ -162,7 +162,12 @@
    "regular expression literals using `#rx'.")
   20)
 
-;; TODO regexp thing. then try it. then reply to email thread
+(define-hidden-cost
+  "vector of floats"
+  (string-append
+   "This expression computes a vector of Float. "
+   "It may be more efficient to use FlVectors instead.")
+  20)
 
 ;; Converts an info log entry to a hidden cost report.
 ;; Optionally takes a badness multiplier, based on profiling information.
