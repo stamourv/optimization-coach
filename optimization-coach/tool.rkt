@@ -8,7 +8,9 @@
 
 (require "structs.rkt" "report.rkt" "display.rkt")
 
-(provide tool@ optimization-coach-drracket-button)
+(provide tool@
+         optimization-coach-drracket-button
+         optimization-coach-loaded?)
 
 ;; DrRacket tool for reporting missed optimizations in the editor.
 
@@ -71,12 +73,14 @@
                       "Please restart DrRacket to use Optimization Coach."))])
        (send drr-frame launch-optimization-coach)))))
 
+(define optimization-coach-loaded? #f)
+
 (define-unit tool@
 
   (import drracket:tool^)
   (export drracket:tool-exports^)
 
-  (define (phase1) (void))
+  (define (phase1) (set! optimization-coach-loaded? #t))
   (define (phase2) (void))
 
   (define highlights-mixin
