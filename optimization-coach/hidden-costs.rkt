@@ -100,16 +100,6 @@
   (parameter-message "current-pseudo-random-generator")
   20)
 
-(define-hidden-cost
- "struct constructor"
- (string-append
-  "This struct constructor is used in hot code. "
-  "Allocating structs is expensive, consider using vectors instead. "
-  "To keep the same interface, consider defining macro wrappers "
-  "around the vector operations that have the same name as the "
-  "struct constructor and accessors.")
- 20)
-
 (define real-arith-hidden-cost-msg
   (string-append
    "This expression may use exact rational arithmetic, which is inefficient. "
