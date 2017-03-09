@@ -8,9 +8,7 @@
 
 (require "structs.rkt" "report.rkt" "display.rkt")
 
-(provide tool@
-         optimization-coach-drracket-button
-         optimization-coach-loaded?)
+(provide tool@)
 
 ;; DrRacket tool for reporting missed optimizations in the editor.
 
@@ -61,26 +59,12 @@
   optimization-coach-profile
   launch-profile)
 
-(define optimization-coach-drracket-button
-  (list
-   "Optimization Coach"
-   optimization-coach-bitmap
-   (lambda (drr-frame)
-     (with-handlers
-         ([exn:fail:object?
-           (lambda _ (message-box
-                      "Optimization Coach"
-                      "Please restart DrRacket to use Optimization Coach."))])
-       (send drr-frame launch-optimization-coach)))))
-
-(define optimization-coach-loaded? #f)
-
 (define-unit tool@
 
   (import drracket:tool^)
   (export drracket:tool-exports^)
 
-  (define (phase1) (set! optimization-coach-loaded? #t))
+  (define (phase1) (void))
   (define (phase2) (void))
 
   (define highlights-mixin
@@ -439,4 +423,21 @@
 
       (super-new)))
 
-  (drracket:get/extend:extend-unit-frame frame-mixin))
+  (drracket:get/extend:extend-unit-frame frame-mixin)
+
+  (drracket:module-language-tools:add-opt-in-toolbar-button
+   (lambda (drr-frame container)
+     (new switchable-button%
+          [parent container]
+          [label "Optimization Coach"]
+          [bitmap optimization-coach-bitmap]
+          [callback
+           (lambda (_)
+             (with-handlers
+               ([exn:fail:object?
+                 (lambda _
+                   (message-box
+                    "Optimization Coach"
+                    "Please restart DrRacket to use Optimization Coach."))])
+               (send drr-frame launch-optimization-coach)))]))
+   'optimization-coach))
