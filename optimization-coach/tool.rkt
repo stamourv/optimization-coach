@@ -282,38 +282,38 @@
 
       ;; control panel
       (define panel              #f)
-      (define check-box-panel    #f)
-      (define profile-panel      #f)
+      (define check-box-pane     #f)
+      (define profile-pane       #f)
       (define profile-file-field #f)
       (define (create-panel)
         (set! panel
               (new vertical-panel%
                    [parent (get-area-container)]
                    [stretchable-height #f]))
-        (set! check-box-panel
-              (new horizontal-panel%
+        (set! check-box-pane
+              (new horizontal-pane%
                    [parent panel]
                    [stretchable-height #f]))
-        (set! profile-panel
-              (new horizontal-panel%
+        (set! profile-pane
+              (new horizontal-pane%
                    [parent panel]
                    [stretchable-height #f]))
         (new button%
              [label (string-constant close)]
-             [parent check-box-panel]
+             [parent check-box-pane]
              [callback (lambda _ (close-optimization-coach))])
         (new button%
              [label "Show More"]
-             [parent profile-panel]
+             [parent profile-pane]
              [callback (lambda _ (launch-optimization-coach #:verbose? #t))])
         (new button%
              [label "Refine"]
-             [parent profile-panel]
+             [parent profile-pane]
              [callback (lambda _ (launch-profile))])
         (set! profile-file-field
               (new text-field%
                    [label "Profile file:"]
-                   [parent profile-panel]
+                   [parent profile-pane]
                    [init-value (send (get-definitions-text) get-profile-file)]
                    [callback ; when the value changes, propagate to master
                     (lambda (text-field control-event)
@@ -321,7 +321,7 @@
                             (send text-field get-value)))]))
         (new button%
              [label (string-constant browse...)]
-             [parent profile-panel]
+             [parent profile-pane]
              [callback
               (lambda _
                 (define-values (dir name _)
@@ -335,7 +335,7 @@
         (for ([(l f) (in-dict check-boxes)])
           (new check-box%
                [label l]
-               [parent check-box-panel]
+               [parent check-box-pane]
                [callback
                 (lambda _
                   (define definitions (get-definitions-text))
@@ -354,7 +354,7 @@
               [else  (create-panel)])
         ;; update check-boxes
         (define filters (send (get-definitions-text) get-filters))
-        (for ([c (in-list (for/list ([c (in-list (send check-box-panel
+        (for ([c (in-list (for/list ([c (in-list (send check-box-pane
                                                        get-children))]
                                      #:when (is-a? c check-box%))
                             c))]
