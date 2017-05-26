@@ -236,7 +236,7 @@
   (define frame-mixin
     (mixin (drracket:unit:frame<%>) ()
       (inherit set-show-menu-sort-key get-current-tab
-               get-definitions-text get-interactions-text get-area-container)
+               get-definitions-text get-interactions-text)
 
 
       ;; view menu
@@ -281,14 +281,19 @@
       ;; -----------------------------------------------------------------------
 
       ;; control panel
+      (define pane               #f)
       (define panel              #f)
       (define check-box-pane     #f)
       (define profile-pane       #f)
       (define profile-file-field #f)
+      (define/override (make-root-area-container cls parent)
+        (define rac (super make-root-area-container vertical-panel% parent))
+        (set! pane rac)
+        (new cls [parent rac]))
       (define (create-panel)
         (set! panel
               (new vertical-panel%
-                   [parent (get-area-container)]
+                   [parent pane]
                    [stretchable-height #f]))
         (set! check-box-pane
               (new horizontal-pane%
@@ -348,9 +353,8 @@
                [value #f]))) ; will be updated in `show-optimization-coach'
 
       (define/public (show-optimization-coach)
-        (define area-container (get-area-container))
-        (cond [panel (or (memq panel (send area-container get-children))
-                         (send area-container add-child panel))]
+        (cond [panel (or (memq panel (send pane get-children))
+                         (send pane add-child panel))]
               [else  (create-panel)])
         ;; update check-boxes
         (define filters (send (get-definitions-text) get-filters))
@@ -365,10 +369,8 @@
               (send (get-definitions-text) get-profile-file)))
 
       (define/public (hide-optimization-coach)
-        (define container (get-area-container))
-        ;; in rare cases, for unknown reasons, the panel may already be gone
-        (when (member panel (send container get-children))
-          (send container delete-child panel)))
+        (when (member panel (send pane get-children))
+          (send pane delete-child panel)))
 
 
       ;; tab switching
