@@ -90,3 +90,8 @@ Optimization Coach provides a @emph{verbose} mode, which is enabled by clicking
 the @bold{Show More} button. In verbose mode, reports that would only be
 displayed for hot functions are displayed for all functions instead. No
 profiling information is required to enable verbose mode.
+
+@section{Command Line Invocation}
+If you wish to use Optimization Coach from the command line to have its output
+digested by another program, you may invoke it as:
+@commandline{racket -l optimization-coach/report filename.rkt}
