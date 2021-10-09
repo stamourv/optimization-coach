@@ -14,3 +14,6 @@
 
 (define pkg-desc "Optimization Coach Plug-In for DrRacket.")
 (define pkg-authors '(stamourv))
+
+(define license
+  '(Apache-2.0 OR MIT))
